@@ -71,6 +71,22 @@ const PlayerSeat = ({
       return 'items-center';
   };
 
+  // Timer logic
+  const [elapsedTime, setElapsedTime] = React.useState(0);
+  
+  React.useEffect(() => {
+    let interval;
+    if (isActive) {
+      setElapsedTime(0);
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    return () => clearInterval(interval);
+  }, [isActive]);
+
   return (
     <div className={clsx(
       "relative flex items-center justify-center gap-2", // 增加 gap
@@ -79,10 +95,10 @@ const PlayerSeat = ({
       (side === 'left' || side === 'right') ? "w-[140px]" : "w-[84px]"
     )}>
       
-      {/* 倒计时 / 状态标签 - 位置需要根据 side 微调，这里简化为绝对定位在 Info 附近 */}
+      {/* 计时器 (增长计时) */}
       {isActive && (
         <div className="absolute -top-4 z-40 bg-yellow-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
-          30s
+          {elapsedTime}s
         </div>
       )}
 

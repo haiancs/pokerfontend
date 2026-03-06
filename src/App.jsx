@@ -35,9 +35,17 @@ function AppContent() {
   const [gameOverStats, setGameOverStats] = useState([]);
   const [showHandResult, setShowHandResult] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [hasConfirmedResult, setHasConfirmedResult] = useState(false); // Track if user confirmed current result
   const scrollContainerRef = useRef(null);
   const lastScrollYRef = useRef(0);
   const touchStartYRef = useRef(0);
+
+  useEffect(() => {
+     // Reset confirmation when winners are cleared (new hand started)
+     if (!gameState.winners || gameState.winners.length === 0) {
+         setHasConfirmedResult(false);
+     }
+  }, [gameState.winners]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -174,6 +182,17 @@ function AppContent() {
       }
     };
   }, []);
+
+  // Effect to control HandResultModal visibility
+  useEffect(() => {
+      if (gameState.winners && gameState.winners.length > 0) {
+          if (!hasConfirmedResult) {
+              setShowHandResult(true);
+          }
+      } else {
+          setShowHandResult(false);
+      }
+  }, [gameState.winners, hasConfirmedResult]);
 
   const handleLogin = ({ nickname, roomId, maxHands, maxPlayers, uid }) => {
     // Generate or use existing uid
@@ -324,10 +343,11 @@ function AppContent() {
       });
       
       // 检查是否需要显示结算 Modal
-      // 如果后端传回 winners 且状态不是 PREFLOP (防止新的一局开始时还弹窗)
-      // 但现在我们修改了后端，结算后状态会变成 WAITING 并且发送 winners
       if (data.winners && data.winners.length > 0) {
-          setShowHandResult(true);
+          // Only show if not confirmed yet
+          // Note: accessing state inside socket callback might be stale if not using functional update or ref.
+          // But here setGameState triggers re-render. 
+          // We should control showHandResult in a useEffect dependent on gameState.winners
       } else if (data.state === 'PREFLOP' || data.state === 'FLOP') {
           // 新游戏开始，关闭弹窗
           setShowHandResult(false);
@@ -372,6 +392,10 @@ function AppContent() {
   };
 
   const handleReady = () => {
+    // Local update to close modal immediately
+    setHasConfirmedResult(true);
+    setShowHandResult(false);
+
     if (socketRef.current) {
         socketRef.current.emit('player_ready', {
             tableId: room.roomId
@@ -387,138 +411,54 @@ function AppContent() {
   const isMyTurn = myPlayer?.isActive || false;
 
   return (
-    // 全局滚动容器：h-screen overflow-y-auto
-    <div 
-        ref={scrollContainerRef}
-        className="h-screen w-full bg-[#0f172a] flex flex-col overflow-y-auto scroll-smooth relative"
-    >
+    // 全局布局容器：Flex Column
+    <div className="h-screen w-full bg-[#0f172a] flex flex-col relative overflow-hidden">
       
-      {/* 顶部固定区域容器 - 设为 fixed 以脱离文档流 */}
+      {/* 顶部固定 Header */}
       <div 
-        className={`fixed top-0 left-0 right-0 z-50 w-full shadow-lg transition-transform duration-300 ease-in-out ${
+        className={`absolute top-0 left-0 right-0 z-50 w-full shadow-lg transition-transform duration-300 ease-in-out ${
             isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        {/* 顶部状态栏 */}
-        <div className="h-14 bg-[#1e293b] w-full flex items-center justify-between px-4 border-b border-slate-700">
-          <div className="flex items-center gap-4">
-            <div className="text-xl font-bold text-white tracking-tight">Poker Science1</div>
-            {gameState.maxHands && (
-                <div className="text-xs text-slate-400">
-                    Hand: {gameState.handsPlayed} / {gameState.maxHands}
+        <div className="bg-[#1e293b] p-4 flex justify-between items-center border-b border-white/5">
+           <div className="flex items-center gap-3">
+             <div className="bg-blue-600/20 p-2 rounded-lg">
+                <Menu className="w-5 h-5 text-blue-400" />
+             </div>
+             <div>
+                <h1 className="text-white font-bold text-sm tracking-wide">POKER<span className="text-blue-500">PRO</span></h1>
+                <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-[10px] text-slate-400 font-medium">Room: {room.roomId}</span>
                 </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-             {myPlayer && myPlayer.stack < 200 && (
-                 <button 
-                    onClick={handleBorrow}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse"
-                 >
-                    向系统借分 (+1000)
-                 </button>
-             )}
-             <button
-                onClick={() => {
-                    if (confirm('确定要退出游戏吗？')) {
-                        localStorage.removeItem('poker_session');
-                        window.location.reload();
-                    }
-                }}
-                className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold transition-colors"
-             >
-                退出
-             </button>
-             <div className="bg-blue-600 px-2 py-1 rounded text-xs font-bold text-white">中文</div>
-          </div>
-        </div>
-
-        {/* 次级信息栏 */}
-        <div className="h-10 bg-[#1e293b]/95 w-full flex items-center justify-between px-4 backdrop-blur-sm border-b border-slate-700/50">
-          <div className="flex items-center gap-3 text-sm">
-            <span className="font-bold text-white">9人桌</span>
-            <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-xs">手牌 #{gameState.handsPlayed + 1}</span>
-            {gameState.state === 'WAITING' && gameState.players.length < 2 && (
-                <div className="text-yellow-400 text-xs animate-pulse">等待玩家加入... (需至少2人开始)</div>
-            )}
-            <div className="flex items-center gap-1 text-green-500 text-xs">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              已连接
-            </div>
-          </div>
+             </div>
+           </div>
+           
+           <div className="flex items-center gap-3">
+              <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 transition-colors">
+                  <Signal className="w-4 h-4" />
+              </button>
+              <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 transition-colors">
+                  <Settings className="w-4 h-4" />
+              </button>
+           </div>
         </div>
       </div>
 
-      {/* Game Over Modal */}
-      {showGameOver && gameState.state === 'GAME_OVER' && (
-          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-slate-800 rounded-2xl border border-white/10 p-8 w-full max-w-md shadow-2xl">
-                  <h2 className="text-3xl font-bold text-white text-center mb-6">游戏结束</h2>
-                  <div className="space-y-4">
-                      {gameOverStats.map((p, i) => (
-                          <div key={p.id} className="flex items-center justify-between bg-slate-700/50 p-4 rounded-xl">
-                              <div className="flex items-center gap-4">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-slate-900 ${
-                                      i === 0 ? 'bg-yellow-400' : (i === 1 ? 'bg-slate-400' : (i === 2 ? 'bg-orange-700' : 'bg-slate-600'))
-                                  }`}>
-                                      {i + 1}
-                                  </div>
-                                  <div className="text-white font-medium">{p.name}</div>
-                              </div>
-                              <div className="text-green-400 font-bold font-mono">
-                                  ${p.stack}
-                              </div>
-                          </div>
-                      ))}
-                  </div>
-                  <button 
-                    onClick={() => {
-                        localStorage.removeItem('poker_session');
-                        window.location.reload();
-                    }}
-                    className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors"
-                  >
-                      返回大厅
-                  </button>
-              </div>
-          </div>
-      )}
-
-      {/* Hand Result Modal */}
-      {showHandResult && (
-          <HandResultModal 
-              winners={gameState.winners} 
-              myPlayer={myPlayer}
-              onContinue={() => {
-                  handleReady();
-                  // 可以在这里临时隐藏，等待后端状态更新，或者保持显示直到状态变更为非 WAITING
-                  // 为了交互流畅，点击后通常会变成“已准备”，但 Modal 可能需要关闭或者变成等待状态
-                  // 简单起见，点击继续发送 Ready，后端如果人齐了会开始新局，前端收到 update 自动关闭
-                  // 如果人没齐，前端会收到 Ready 状态更新。
-                  // 我们让 Modal 保持显示，直到收到新一局的 update (state === PREFLOP)
-                  // 或者我们可以添加一个 "Waiting for others..." 的状态在 Modal 内部
-                  
-                  // 但根据需求 "点击继续 替换准备按钮"，意味着点击后应该进入准备状态。
-                  // 如果我们不关闭 Modal，用户就不知道发生了什么。
-                  // 建议：点击继续 -> 关闭 Modal -> 显示桌面上的 "已准备" 状态 (现有的 UI)
-                  setShowHandResult(false);
-              }}
-          />
-      )}
-
-      {/* 游戏主区域 - 不再限制 overflow，随父容器滚动 */}
-      {/* 增加 pt-24 (96px) 以补偿 fixed header 的高度 (14+10 = 24) */}
-      <div className="relative flex-shrink-0 bg-[#0a2540] pt-24">
-        <PokerTable 
-          players={gameState.players} 
-          communityCards={gameState.communityCards} 
-          pot={gameState.pot} 
-          dealerIndex={gameState.dealerIndex}
-        />
-        
-        {/* Start Game / Ready Button Overlay */}
-        {gameState.state === 'WAITING' && (
+      {/* 滚动区域：PokerTable */}
+      <div 
+          ref={scrollContainerRef}
+          className="flex-1 w-full overflow-y-auto scroll-smooth pb-32 pt-20 relative"
+      >
+         <PokerTable 
+            players={gameState.players}
+            communityCards={gameState.communityCards}
+            pot={gameState.pot}
+            dealerIndex={gameState.dealerIndex}
+         />
+         
+         {/* Start Game / Ready Button Overlay */}
+         {gameState.state === 'WAITING' && (
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-20 z-30 flex flex-col items-center gap-2">
                  {gameState.players.length >= 2 ? (
                      <button 
@@ -537,24 +477,70 @@ function AppContent() {
                      </div>
                  )}
              </div>
-        )}
+         )}
       </div>
 
-      {/* 底部操作面板 - 设为 fixed 底部固定，或者随页面流（这里随页面流比较安全，或者 fixed bottom-0） */}
-      {/* 用户的需求是 "整体滚动"，所以操作面板应该也是页面的一部分，或者固定在视口底部？*/}
-      {/* 通常操作面板应该固定在屏幕底部方便操作。如果页面内容很长，面板可能会遮挡内容，但这是移动端常见模式。*/}
-      {/* 这里选择 sticky bottom-0，这样如果内容不足一屏它在底部，内容超出一屏它悬浮在底部 */}
-      <div className="sticky bottom-0 w-full z-50">
-        <ActionPanel 
-          onAction={handleAction} 
-          minBet={Math.max((gameState.minRaise || 20), (gameState.currentBet || 0) + (gameState.minRaise || 20))}
-          maxBet={myPlayer?.stack || 0}
-          currentBet={gameState.currentBet || 0}
-          amountToCall={Math.max(0, (gameState.currentBet || 0) - (myPlayer?.bet || 0))}
-          potSize={gameState.pot || 0}
-          disabled={!isMyTurn}
-        />
+      {/* 底部固定 ActionPanel */}
+      <div className="flex-none w-full z-40 bg-[#1a1f2e] border-t border-white/10 safe-area-bottom">
+         {/* 如果需要显示等待提示，可以在这里加 */}
+         {gameState.winners && gameState.winners.length > 0 && hasConfirmedResult && (
+             <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-black/60 text-white px-4 py-1 rounded-full text-xs backdrop-blur-sm border border-white/10">
+                 等待其他玩家准备...
+             </div>
+         )}
+         
+         <ActionPanel 
+            onAction={handleAction}
+            currentBet={gameState.currentBet}
+            amountToCall={Math.max(0, gameState.currentBet - (myPlayer?.bet || 0))} 
+            minBet={gameState.minRaise + (gameState.currentBet > 0 ? gameState.currentBet : 0)} 
+            maxBet={myPlayer?.stack || 0}
+            potSize={gameState.pot}
+            disabled={!isMyTurn}
+         />
       </div>
+
+      {/* Modals */}
+      {showGameOver && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+           <div className="bg-[#1e293b] p-8 rounded-2xl max-w-md w-full text-center border border-white/10">
+              <h2 className="text-3xl font-bold text-white mb-6">Game Over</h2>
+              <div className="space-y-4 mb-8">
+                 {gameOverStats.map((p, i) => (
+                     <div key={i} className="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                         <div className="flex items-center gap-3">
+                             <span className={`text-lg font-bold w-6 ${i===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{i+1}</span>
+                             <span className="text-white">{p.name}</span>
+                         </div>
+                         <span className="font-mono text-green-400">{p.stack}</span>
+                     </div>
+                 ))}
+              </div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all"
+              >
+                 Play Again
+              </button>
+           </div>
+        </div>
+      )}
+
+      {showHandResult && (
+        <HandResultModal 
+            winners={gameState.winners}
+            onContinue={handleReady}
+            myPlayer={myPlayer}
+        />
+      )}
+
+      {/* Connection Status Toast (Optional) */}
+      {!isLoggedIn && (
+         <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-4 py-2 rounded-full text-sm shadow-lg z-50">
+            Disconnected. Reconnecting...
+         </div>
+      )}
+
     </div>
   );
 }
