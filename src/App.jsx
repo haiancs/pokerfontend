@@ -4,12 +4,13 @@ import PokerTable from './components/PokerTable';
 import ActionPanel from './components/ActionPanel';
 import Login from './components/Login';
 import HandResultModal from './components/HandResultModal';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Settings, Menu, PauseCircle, Signal } from 'lucide-react';
 
 // Use environment variable or default to localhost:3000
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-function App() {
+function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [room, setRoom] = useState(null);
@@ -35,6 +36,21 @@ function App() {
   const [showHandResult, setShowHandResult] = useState(false);
 
   useEffect(() => {
+    // Check for existing session
+    const session = localStorage.getItem('poker_session');
+    if (session) {
+        try {
+            const { nickname, roomId, uid, maxHands, maxPlayers } = JSON.parse(session);
+            if (nickname && roomId && uid) {
+                console.log('Restoring session:', { nickname, roomId, uid });
+                handleLogin({ nickname, roomId, maxHands, maxPlayers, uid });
+            }
+        } catch (e) {
+            console.error('Failed to parse session:', e);
+            localStorage.removeItem('poker_session');
+        }
+    }
+
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -42,26 +58,53 @@ function App() {
     };
   }, []);
 
-  const handleLogin = ({ nickname, roomId, maxHands, maxPlayers }) => {
+  const handleLogin = ({ nickname, roomId, maxHands, maxPlayers, uid }) => {
+    // Generate or use existing uid
+    const userId = uid || Math.random().toString(36).substr(2, 9);
+    
+    // Save session
+    localStorage.setItem('poker_session', JSON.stringify({
+        nickname,
+        roomId,
+        uid: userId,
+        maxHands,
+        maxPlayers
+    }));
+
     setUser({ nickname });
     setRoom({ roomId });
 
     // Connect to Socket.io server
-    const socket = io(SOCKET_URL);
+    // Configure with websocket transport first to avoid polling issues
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      timeout: 10000,
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Connected to server');
+      console.log('Connected to server with ID:', socket.id);
       socket.emit('join_table', { 
         tableId: roomId, 
         playerName: nickname,
         maxHands,
-        maxPlayers
+        maxPlayers,
+        uid: userId // Send persistent user ID
       });
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+      // alert(`Connection error: ${err.message}`);
     });
 
     socket.on('game_update', (data) => {
       console.log('Game update:', data);
+      if (!data) {
+        console.error('Received empty game update');
+        return;
+      }
       // Map server state to frontend state structure if necessary
       
       const mySocketId = socketRef.current?.id;
@@ -251,6 +294,17 @@ function App() {
                     向系统借分 (+1000)
                  </button>
              )}
+             <button
+                onClick={() => {
+                    if (confirm('确定要退出游戏吗？')) {
+                        localStorage.removeItem('poker_session');
+                        window.location.reload();
+                    }
+                }}
+                className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-xs font-bold transition-colors"
+             >
+                退出
+             </button>
              <div className="bg-blue-600 px-2 py-1 rounded text-xs font-bold text-white">中文</div>
           </div>
         </div>
@@ -294,7 +348,10 @@ function App() {
                       ))}
                   </div>
                   <button 
-                    onClick={() => window.location.reload()}
+                    onClick={() => {
+                        localStorage.removeItem('poker_session');
+                        window.location.reload();
+                    }}
                     className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors"
                   >
                       返回大厅
@@ -373,6 +430,14 @@ function App() {
         />
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   );
 }
 
