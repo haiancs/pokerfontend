@@ -411,8 +411,8 @@ function AppContent() {
   const isMyTurn = myPlayer?.isActive || false;
 
   return (
-    // 全局布局容器：Flex Column
-    <div className="h-screen w-full bg-[#0f172a] flex flex-col relative overflow-hidden">
+    // 全局布局容器：Flex Column, fixed height (dvh for mobile)
+    <div className="h-[100dvh] w-full bg-[#0f172a] flex flex-col relative overflow-hidden">
       
       {/* 顶部固定 Header */}
       <div 
@@ -435,11 +435,17 @@ function AppContent() {
            </div>
            
            <div className="flex items-center gap-3">
-              <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 transition-colors">
-                  <Signal className="w-4 h-4" />
-              </button>
-              <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 transition-colors">
-                  <Settings className="w-4 h-4" />
+              <button 
+                onClick={() => {
+                    if (confirm('确定要退出游戏吗？')) {
+                        localStorage.removeItem('poker_session');
+                        window.location.reload();
+                    }
+                }}
+                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 transition-all text-xs font-bold"
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                  <span>退出</span>
               </button>
            </div>
         </div>

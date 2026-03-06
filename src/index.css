@@ -2,9 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Prevent body scroll */
+  overscroll-behavior: none; /* Prevent rubber-banding */
+}
+
 body {
   @apply bg-[#0f172a] text-white select-none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* 扑克牌桌纹理 - 深蓝色绒布 */
