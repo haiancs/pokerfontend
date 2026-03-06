@@ -12,17 +12,15 @@ const ActionPanel = ({
   disabled = false
 }) => {
   const [betAmount, setBetAmount] = useState(minBet * 3); // 默认 3BB
+  const safeMinBet = Math.min(minBet, maxBet);
 
-  // 确保 betAmount 至少是 minBet
   React.useEffect(() => {
-      if (betAmount < minBet) {
-          setBetAmount(minBet);
-      }
-  }, [minBet]);
+      setBetAmount(prev => Math.max(safeMinBet, Math.min(maxBet, prev)));
+  }, [safeMinBet, maxBet]);
 
   const handleBetChange = (amount) => {
     if (disabled) return;
-    const newAmount = Math.max(minBet, Math.min(maxBet, amount));
+    const newAmount = Math.max(safeMinBet, Math.min(maxBet, amount));
     setBetAmount(newAmount);
   };
 
@@ -106,7 +104,7 @@ const ActionPanel = ({
         {/* 快捷按钮 - 更小 */}
         <div className="grid grid-cols-4 gap-1.5">
           {['最小', '3BB', '4BB', '5BB'].map((label, idx) => {
-             const val = idx === 0 ? minBet : minBet * (idx + 2); // 简单映射: 0->min, 1->3bb, 2->4bb, 3->5bb
+             const val = idx === 0 ? safeMinBet : safeMinBet * (idx + 2); // 简单映射: 0->min, 1->3bb, 2->4bb, 3->5bb
              return (
               <button 
                 key={label}

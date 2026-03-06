@@ -5,7 +5,7 @@ import ActionPanel from './components/ActionPanel';
 import Login from './components/Login';
 import HandResultModal from './components/HandResultModal';
 import ErrorBoundary from './components/ErrorBoundary';
-import { Settings, Menu, PauseCircle, Signal } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 // Use environment variable or default to localhost:3000
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -27,8 +27,10 @@ function AppContent() {
     dealerIndex: 0,
     currentBet: 0,
     minRaise: 20,
+    minTotalRaiseTo: 40,
     bigBlind: 20,
-    winners: [] // 新增 winners 状态
+    winners: [],
+    showdown: false
   });
 
   const [showGameOver, setShowGameOver] = useState(false);
@@ -338,8 +340,10 @@ function AppContent() {
         dealerIndex: data.dealerIndex, // Original dealer index
         currentBet: data.currentBet,
         minRaise: data.minRaise || 20,
+        minTotalRaiseTo: data.minTotalRaiseTo || ((data.currentBet || 0) + (data.minRaise || 20)),
         bigBlind: data.bigBlind || 20,
-        winners: data.winners || [] // 更新 winners
+        winners: data.winners || [],
+        showdown: !!data.showdown
       });
       
       // 检查是否需要显示结算 Modal
@@ -430,6 +434,11 @@ function AppContent() {
                 <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                     <span className="text-[10px] text-slate-400 font-medium">Room: {room.roomId}</span>
+                    {gameState.maxHands ? (
+                      <span className="text-[10px] text-blue-300 font-medium">
+                        Hand: {Math.min(gameState.handsPlayed + 1, gameState.maxHands)}/{gameState.maxHands}
+                      </span>
+                    ) : null}
                 </div>
              </div>
            </div>
@@ -499,7 +508,7 @@ function AppContent() {
             onAction={handleAction}
             currentBet={gameState.currentBet}
             amountToCall={Math.max(0, gameState.currentBet - (myPlayer?.bet || 0))} 
-            minBet={gameState.minRaise + (gameState.currentBet > 0 ? gameState.currentBet : 0)} 
+            minBet={gameState.minTotalRaiseTo} 
             maxBet={myPlayer?.stack || 0}
             potSize={gameState.pot}
             disabled={!isMyTurn}
@@ -537,6 +546,9 @@ function AppContent() {
             winners={gameState.winners}
             onContinue={handleReady}
             myPlayer={myPlayer}
+            communityCards={gameState.communityCards}
+            players={gameState.players}
+            showdown={gameState.showdown}
         />
       )}
 

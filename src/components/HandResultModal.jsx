@@ -1,8 +1,15 @@
 import React from 'react';
 import { clsx } from 'clsx';
+import Card from './Card';
 
-const HandResultModal = ({ winners, onContinue, myPlayer }) => {
+const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], players = [], showdown = false }) => {
   if (!winners || winners.length === 0) return null;
+
+  const alivePlayers = players.filter((player) => {
+    if (player.status === 'fold') return false;
+    if (!player.cards || player.cards.length === 0) return false;
+    return player.cards.every(card => card.revealed);
+  });
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
@@ -17,12 +24,45 @@ const HandResultModal = ({ winners, onContinue, myPlayer }) => {
 
         {/* Winners List */}
         <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+          {showdown && (
+            <div className="bg-slate-900/60 border border-white/10 rounded-xl p-4 space-y-4">
+              <div>
+                <div className="text-xs text-slate-400 mb-2">公共牌</div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {communityCards.map((card, idx) => (
+                    <div key={`board-${idx}`} className="w-10 h-14">
+                      <Card rank={card.rank} suit={card.suit} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs text-slate-400 mb-2">存活玩家手牌</div>
+                <div className="space-y-2">
+                  {alivePlayers.map((player, idx) => (
+                    <div key={`alive-${idx}`} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2 border border-white/5">
+                      <span className="text-sm font-semibold text-white">{player.name}</span>
+                      <div className="flex items-center gap-1.5">
+                        {player.cards.map((card, cardIdx) => (
+                          <div key={`alive-${idx}-card-${cardIdx}`} className="w-9 h-12">
+                            <Card rank={card.rank} suit={card.suit} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {winners.map((winner, idx) => (
             <div 
                 key={idx} 
                 className={clsx(
                     "flex items-center justify-between p-4 rounded-xl border transition-all",
-                    winner.id === myPlayer?.socketId 
+                    winner.name === myPlayer?.name
                         ? "bg-yellow-500/10 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]" 
                         : "bg-slate-800/50 border-white/5"
                 )}
@@ -34,7 +74,7 @@ const HandResultModal = ({ winners, onContinue, myPlayer }) => {
                 <div>
                     <div className="font-bold text-white text-lg">{winner.name}</div>
                     <div className="text-xs text-slate-400">
-                        {winner.handRank !== undefined ? `牌型等级: ${winner.handRank}` : '赢家'}
+                        {winner.handRankText ? winner.handRankText : (winner.handRank !== undefined ? `牌型等级: ${winner.handRank}` : '赢家')}
                     </div>
                 </div>
               </div>
