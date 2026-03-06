@@ -117,11 +117,18 @@ const PlayerSeat = ({
         "relative flex flex-col p-1 rounded-lg transition-all duration-300 select-none shrink-0",
         getInfoAlignClass(),
         isActive ? "ring-2 ring-yellow-400 bg-black/40" : "bg-black/20 border border-white/5",
-        status === 'fold' && "opacity-50 grayscale",
+        (status === 'fold' || status === 'offline') && "opacity-50 grayscale",
         // 侧边布局时，Info 区域宽度可以稍微小一点
         (side === 'left' || side === 'right') ? "w-[60px]" : "w-full"
       )}>
         
+        {/* Offline Status */}
+        {status === 'offline' && (
+             <div className="absolute inset-0 bg-black/60 z-50 flex items-center justify-center rounded-lg backdrop-blur-[1px]">
+                 <div className="text-[10px] font-bold text-red-400 bg-black/80 px-1 rounded">Offline</div>
+             </div>
+        )}
+
         {/* 位置标签 */}
         <div className="absolute -top-2 -left-2 bg-indigo-600 text-white text-[8px] font-bold px-1 rounded shadow-sm z-20 uppercase border border-white/10">
           {position}

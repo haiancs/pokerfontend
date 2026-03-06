@@ -34,6 +34,123 @@ function AppContent() {
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverStats, setGameOverStats] = useState([]);
   const [showHandResult, setShowHandResult] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const scrollContainerRef = useRef(null);
+  const lastScrollYRef = useRef(0);
+  const touchStartYRef = useRef(0);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    console.log('Setup Scroll Listener, container:', container, 'isLoggedIn:', isLoggedIn); // 确认容器是否存在
+    
+    // 如果没有容器且未登录，则不进行绑定。如果登录了但还没容器，可能是渲染时机问题。
+    if (!container && !isLoggedIn) return;
+
+    // 如果已登录但 container 为空，可能是因为 DOM 尚未更新。
+    // 但在 useEffect 中，DOM 应该已经挂载。
+    // 如果还是不行，可能需要 useLayoutEffect 或者在 ref callback 中处理。
+    
+    // 即使 container 为 null，我们也绑定 document 级别的事件 (Touch/Wheel)
+    // 这样至少能在移动端和电脑滚轮上工作
+
+    let ticking = false;
+
+    // 处理滚动事件 (桌面/有滚动条的情况)
+    const handleScroll = () => {
+        if (!container) return; // 安全检查
+
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const currentScrollY = Math.max(0, container.scrollTop);
+                const lastScrollY = lastScrollYRef.current;
+                
+                console.log('Scroll Event:', currentScrollY); // 简化日志
+
+                if (Math.abs(currentScrollY - lastScrollY) > 5) {
+                    if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                        console.log('Hide Header (Scroll)');
+                        setIsHeaderVisible(false);
+                    } else if (currentScrollY < lastScrollY) {
+                        console.log('Show Header (Scroll)');
+                        setIsHeaderVisible(true);
+                    }
+                    lastScrollYRef.current = currentScrollY;
+                }
+                ticking = false;
+            });
+            ticking = true;
+        }
+    };
+
+    // 全局滚轮监听 (绑定到 document，确保捕获)
+    const handleWheel = (e) => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                console.log('Wheel Event:', e.deltaY);
+                if (e.deltaY > 10) {
+                    console.log('Hide Header (Wheel)');
+                    setIsHeaderVisible(false);
+                } else if (e.deltaY < -10) {
+                    console.log('Show Header (Wheel)');
+                    setIsHeaderVisible(true);
+                }
+                ticking = false;
+            });
+            ticking = true;
+        }
+    };
+
+    // 全局触摸监听 (绑定到 document，确保捕获)
+    const handleTouchStart = (e) => {
+        touchStartYRef.current = e.touches[0].clientY;
+        ticking = false;
+    };
+
+    const handleTouchMove = (e) => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const currentY = e.touches[0].clientY;
+                const startY = touchStartYRef.current;
+                const diff = startY - currentY;
+                
+                console.log('Touch Move:', diff);
+
+                if (Math.abs(diff) > 30) {
+                     if (diff > 0) {
+                         console.log('Hide Header (Touch)');
+                         setIsHeaderVisible(false);
+                     } else {
+                         console.log('Show Header (Touch)');
+                         setIsHeaderVisible(true);
+                     }
+                     touchStartYRef.current = currentY;
+                }
+                
+                ticking = false;
+            });
+            ticking = true;
+        }
+    };
+
+    // Scroll 仍然绑定在容器上
+    if (container) {
+        container.addEventListener('scroll', handleScroll);
+    }
+    // Wheel 和 Touch 绑定到 document 上，确保即使鼠标在子元素上也能触发
+    document.addEventListener('wheel', handleWheel, { passive: true });
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+
+    return () => {
+        console.log('Cleanup Scroll Listener');
+        if (container) {
+            container.removeEventListener('scroll', handleScroll);
+        }
+        document.removeEventListener('wheel', handleWheel);
+        document.removeEventListener('touchstart', handleTouchStart);
+        document.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [isLoggedIn]); // 依赖 isLoggedIn，确保登录后重新绑定
 
   useEffect(() => {
     // Check for existing session
@@ -157,7 +274,8 @@ function AppContent() {
              return c;
           }) : [],
           bet: p.bet,
-          status: p.folded ? 'fold' : (p.allIn ? 'all-in' : 'active'),
+          online: p.online,
+          status: p.folded ? 'fold' : (p.allIn ? 'all-in' : (p.online === false ? 'offline' : 'active')),
           isActive: p.isTurn,
           isReady: data.state === 'WAITING' && p.isReady, // Only show ready status in WAITING state
           isMe: p.socketId === mySocketId,
@@ -270,14 +388,21 @@ function AppContent() {
 
   return (
     // 全局滚动容器：h-screen overflow-y-auto
-    <div className="h-screen w-full bg-[#0f172a] flex flex-col overflow-y-auto">
+    <div 
+        ref={scrollContainerRef}
+        className="h-screen w-full bg-[#0f172a] flex flex-col overflow-y-auto scroll-smooth relative"
+    >
       
-      {/* 顶部固定区域容器 - 设为 sticky 以便在滚动时保持在顶部 */}
-      <div className="sticky top-0 z-50 w-full shadow-lg">
+      {/* 顶部固定区域容器 - 设为 fixed 以脱离文档流 */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-50 w-full shadow-lg transition-transform duration-300 ease-in-out ${
+            isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
         {/* 顶部状态栏 */}
         <div className="h-14 bg-[#1e293b] w-full flex items-center justify-between px-4 border-b border-slate-700">
           <div className="flex items-center gap-4">
-            <div className="text-xl font-bold text-white tracking-tight">Poker Science</div>
+            <div className="text-xl font-bold text-white tracking-tight">Poker Science1</div>
             {gameState.maxHands && (
                 <div className="text-xs text-slate-400">
                     Hand: {gameState.handsPlayed} / {gameState.maxHands}
@@ -383,7 +508,8 @@ function AppContent() {
       )}
 
       {/* 游戏主区域 - 不再限制 overflow，随父容器滚动 */}
-      <div className="relative flex-shrink-0 bg-[#0a2540]">
+      {/* 增加 pt-24 (96px) 以补偿 fixed header 的高度 (14+10 = 24) */}
+      <div className="relative flex-shrink-0 bg-[#0a2540] pt-24">
         <PokerTable 
           players={gameState.players} 
           communityCards={gameState.communityCards} 
