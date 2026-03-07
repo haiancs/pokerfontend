@@ -19,6 +19,7 @@ function AppContent() {
   // 游戏状态
   const [gameState, setGameState] = useState({
     pot: 0,
+    pots: [],
     communityCards: [], 
     players: [],
     maxHands: null,

@@ -3,7 +3,7 @@ import Card from './Card';
 import PlayerSeat from './PlayerSeat';
 import { clsx } from 'clsx';
 
-const PokerTable = ({ players, communityCards, pot, dealerIndex }) => {
+const PokerTable = ({ players, communityCards, pot, dealerIndex, pots }) => {
   const playerCount = players.length;
 
   // 坐标系统：top%, left%
