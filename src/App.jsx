@@ -332,6 +332,7 @@ function AppContent() {
 
       setGameState({
         pot: data.pot,
+        pots: data.pots || [], // 接收分池信息
         communityCards: mappedCommunityCards,
         players: reorderedPlayers, // Use reordered array
         maxHands: data.maxHands,
@@ -407,6 +408,16 @@ function AppContent() {
     }
   };
 
+  const handleRestart = () => {
+      if (socketRef.current) {
+          socketRef.current.emit('restart_game', {
+              tableId: room.roomId
+          });
+          // 乐观更新：关闭弹窗
+          setShowGameOver(false);
+      }
+  };
+
   if (!isLoggedIn) {
     return <Login onLogin={handleLogin} />;
   }
@@ -466,11 +477,12 @@ function AppContent() {
           className="flex-1 w-full overflow-y-auto scroll-smooth pb-32 pt-20 relative"
       >
          <PokerTable 
-            players={gameState.players}
-            communityCards={gameState.communityCards}
-            pot={gameState.pot}
-            dealerIndex={gameState.dealerIndex}
-         />
+        players={gameState.players} 
+        communityCards={gameState.communityCards} 
+        pot={gameState.pot}
+        pots={gameState.pots}
+        dealerIndex={gameState.dealerIndex}
+      />
          
          {/* Start Game / Ready Button Overlay */}
          {gameState.state === 'WAITING' && (
@@ -532,10 +544,10 @@ function AppContent() {
                  ))}
               </div>
               <button 
-                onClick={() => window.location.reload()}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all"
+                onClick={handleRestart}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all active:scale-95"
               >
-                 Play Again
+                 Play Again (Restart)
               </button>
            </div>
         </div>

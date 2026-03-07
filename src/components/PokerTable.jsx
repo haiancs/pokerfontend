@@ -93,9 +93,23 @@ return (
 
     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-4 z-10 w-full">
       
-      <div className="bg-[#0f172a]/90 backdrop-blur-sm px-6 py-1.5 rounded-full shadow-lg border border-yellow-500/20 flex items-center gap-2">
-        <span className="text-[10px] text-yellow-500 uppercase tracking-widest font-bold">POT</span>
-        <span className="text-xl font-bold text-white tracking-wide">{pot}</span>
+      <div className="flex flex-col items-center gap-1">
+          {/* 主底池 (Total Pot) */}
+          <div className="bg-[#0f172a]/90 backdrop-blur-sm px-6 py-1.5 rounded-full shadow-lg border border-yellow-500/20 flex items-center gap-2">
+            <span className="text-[10px] text-yellow-500 uppercase tracking-widest font-bold">POT</span>
+            <span className="text-xl font-bold text-white tracking-wide">{pot}</span>
+          </div>
+          
+          {/* 边池 (Side Pots) - 仅当有多个分池时显示 */}
+          {pots && pots.length > 1 && (
+              <div className="flex gap-1 flex-wrap justify-center max-w-[200px]">
+                  {pots.map((p, i) => (
+                      <div key={i} className="bg-slate-800/80 px-2 py-0.5 rounded text-[10px] text-slate-300 border border-white/5">
+                          {i === 0 ? 'Main' : `Side ${i}`}: {p}
+                      </div>
+                  ))}
+              </div>
+          )}
       </div>
 
       <div className="flex items-center justify-center gap-3 px-6 py-3 bg-black/20 rounded-2xl border border-white/5 backdrop-blur-md">
