@@ -95,16 +95,16 @@ const PlayerSeat = ({
       (side === 'left' || side === 'right') ? "w-[140px]" : "w-[84px]"
     )}>
       
-      {/* 计时器 (增长计时) */}
+      {/* 计时器 (增长计时) - 移到左上角，不遮挡牌 */}
       {isActive && (
-        <div className="absolute -top-4 z-40 bg-yellow-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
+        <div className="absolute -top-6 -left-2 z-40 bg-yellow-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse border border-yellow-300">
           {elapsedTime}s
         </div>
       )}
 
-      {/* 玩家状态标签 (如: 加注 29) */}
+      {/* 玩家状态标签 (如: 加注 29) - 移到右上角 */}
       {actionLabel && (
-        <div className="absolute -top-8 z-40 bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-lg border border-slate-200 whitespace-nowrap">
+        <div className="absolute -top-8 right-0 z-40 bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-lg border border-slate-200 whitespace-nowrap">
           {actionLabel}
         </div>
       )}

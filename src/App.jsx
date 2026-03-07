@@ -524,6 +524,7 @@ function AppContent() {
             minBet={gameState.minTotalRaiseTo} 
             maxBet={myPlayer?.stack || 0}
             potSize={gameState.pot}
+            bigBlind={gameState.bigBlind}
             disabled={!isMyTurn}
          />
       </div>
