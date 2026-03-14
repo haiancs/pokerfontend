@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Weblatro Poker Layout Demo</title>
+    <style>
+        @font-face {
+            font-family: 'm6x11plus';
+            src: url('../public/assets/fonts/m6x11plus.ttf') format('truetype');
+        }
+
+        :root {
+            --bg-color: #2c3e50;
+            --panel-bg: rgba(0, 0, 0, 0.4);
+            --text-color: #fff;
+            --accent-color: #ef4444; /* Red */
+            --highlight-color: #f59e0b; /* Amber/Gold */
+            --card-width: 71px;
+            --card-height: 95px;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'm6x11plus', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* 强制横屏提示 */
+        #orientation-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000;
+            color: white;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media screen and (orientation: portrait) {
+            #orientation-warning {
+                display: flex;
+            }
+        }
+
+        /* 主容器：Grid 布局 */
+        #game-container {
+            display: grid;
+            width: 100%;
+            height: 100%;
+            /* 
+               Grid 布局设计：
+               - 左侧: 信息栏 (Info Panel) - 固定宽度或比例
+               - 右侧: 游戏主区域 (Table Area)
+               - 底部: 操作栏 (Action Panel) - 跨列或仅在右侧? 
+               Weblatro 布局: 左侧是 Blind/Score 信息，中间是游戏区，右侧是牌组/Discard。
+               
+               参考 Balatro 移动端适配/原版：
+               - 左侧 25% ~ 300px: 盲注信息、当前分数、手牌类型
+               - 右侧 剩余空间: 
+                   - 上部: 商店/Jokers (这里是对手/公牌)
+                   - 中部: 牌桌区 (Community Cards, Pot)
+                   - 下部: 手牌区 & 操作按钮
+            */
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: 1fr auto;
+            grid-template-areas: 
+                "info table"
+                "info actions";
+        }
+
+        /* 背景 Shader 容器 */
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+        }
+
+        /* 1. 左侧信息栏 */
+        #info-panel {
+            grid-area: info;
+            background: rgba(0, 0, 0, 0.3);
+            border-right: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            overflow-y: auto; 
+        }
+
+        /* 移除方框样式，改为简单的文本标题 */
+        .blind-info {
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .blind-info h2 {
+            margin: 0;
+            color: #ef4444; 
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .blind-target {
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        /* 选手列表 */
+        #player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            /* margin-top: 10px; */
+        }
+
+        .player-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .player-row.active {
+            background: rgba(239, 68, 68, 0.2); /* Red tint for active player */
+            border-color: #ef4444;
+        }
+
+        .player-row.hero {
+            background: rgba(245, 158, 11, 0.2); /* Gold tint for hero */
+            border-color: #f59e0b;
+        }
+
+        .player-name {
+            font-size: 1rem;
+            color: #e2e8f0;
+        }
+        
+        .player-stack {
+            font-family: 'm6x11plus';
+            color: #f59e0b; /* Gold */
+            font-size: 1.1rem;
+        }
+
+        .player-bet {
+            background: rgba(0,0,0,0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #cbd5e0;
+            margin-left: 5px;
+        }
+
+        /* 2. 游戏主区域 (牌桌) */
+        #table-area {
+            grid-area: table;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* 垂直居中 */
+            padding: 20px;
+            /* 留出空间给底部的手牌区 */
+            padding-bottom: 0; 
+        }
+
+        /* 牌堆 (Deck) - 右侧固定 */
+        #deck-container {
+            position: absolute;
+            right: 40px; /* 增加右边距，避免贴边 */
+            top: 50%;
+            transform: translateY(-50%);
+            width: var(--card-width);
+            height: var(--card-height);
+            z-index: 5;
+        }
+
+        /* 牌堆顶部的卡背 */
+        .deck-card {
+            position: absolute;
+            width: 100%; height: 100%;
+            background-image: url('../public/assets/img/card_backs.png');
+            background-size: 100% 100%;
+            image-rendering: pixelated;
+            border-radius: 4px;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,0,0,0.2);
+            transition: all 0.4s;
+        }
+
+        /* 堆叠效果 */
+        .deck-card:nth-child(1) { top: 0; left: 0; z-index: 3; }
+        .deck-card:nth-child(2) { top: -2px; left: -2px; z-index: 2; }
+        .deck-card:nth-child(3) { top: -4px; left: -4px; z-index: 1; }
+        
+        .deck-count {
+            position: absolute;
+            bottom: -25px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #a0aec0;
+        }
+
+        /* 弃牌堆 (Discard Pile) - 右下侧 */
+        #discard-pile {
+            position: absolute;
+            right: 40px; /* 增加右边距 */
+            bottom: 40px; /* 增加下边距 */
+            width: var(--card-width);
+            height: var(--card-height);
+            opacity: 0.5;
+            border: 2px dashed rgba(255,255,255,0.2);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* 公共牌区域 - 类似 Weblatro 上方展示 */
+        #community-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        #community-cards {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            background: rgba(0,0,0,0.2);
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: 2px solid rgba(255,255,255,0.1);
+            /* Weblatro 风格阴影 */
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* 底池显示 */
+        #pot-display {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            color: var(--highlight-color);
+            border: 2px solid var(--highlight-color);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* 3. 底部操作栏 & 手牌 */
+        #action-area {
+            grid-area: actions;
+            padding: 10px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        /* 手牌区域 - 类似 Weblatro 居中显示 */
+        #my-hand {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 120px; 
+            margin-bottom: 10px;
+            /* 增加一点间距，防止太挤 */
+            gap: 5px; 
+        }
+
+        .card {
+            width: var(--card-width);
+            height: var(--card-height);
+            background-image: url('../public/assets/img/cards.png');
+            background-size: 1400% 400%; 
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            border-radius: 4px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.3); /* Pixel style shadow */
+            transition: transform 0.1s, margin 0.1s;
+            cursor: pointer;
+            position: relative;
+            /* Weblatro 风格：不需要 margin-right 负值，而是有间隙 */
+        }
+
+        /* 悬停/选中效果 */
+        .card:hover {
+            transform: translateY(-10px);
+            z-index: 10;
+        }
+        
+        .card.selected {
+            transform: translateY(-20px);
+            box-shadow: 0 0 0 2px var(--highlight-color), 4px 4px 0px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        /* 操作按钮组 - Weblatro 风格 */
+        #controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-family: 'm6x11plus', sans-serif;
+            font-size: 1.5rem;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-transform: uppercase;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.4); /* Deep shadow */
+            color: white;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            position: relative;
+            top: 0;
+        }
+
+        .btn:active {
+            top: 4px;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.4);
+        }
+
+        .btn-fold {
+            background-color: #e53e3e; /* Red */
+            border-color: #c53030;
+        }
+        
+        .btn-check {
+            background-color: #3182ce; /* Blue */
+            border-color: #2b6cb0;
+        }
+
+        .btn-raise {
+            background-color: #f59e0b; /* Orange/Gold */
+            border-color: #d97706;
+            color: #1a202c;
+            text-shadow: none;
+            font-weight: bold;
+        }
+
+
+        /* 响应式调整：针对不同比例的横屏设备 */
+        @media (max-height: 500px) {
+            :root {
+                --card-width: 50px;
+                --card-height: 70px;
+            }
+            #game-container {
+                grid-template-columns: 200px 1fr;
+            }
+            .blind-info h2 { font-size: 1.2rem; }
+            .score-value { font-size: 1.5rem; }
+            .btn { padding: 8px 20px; font-size: 1.2rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="orientation-warning">
+        <h1>请旋转设备</h1>
+        <p>Weblatro Poker 需要在横屏模式下运行</p>
+    </div>
+
+    <!-- WebGL Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="game-container">
+        
+        <!-- Left Info Panel -->
+        <aside id="info-panel">
+            <div class="blind-info">
+                <h2>Blinds</h2>
+                <div class="blind-target" style="margin-top:5px;">
+                    <span style="color:#a0aec0; font-size:1rem;">Small / Big</span><br>
+                    <span style="color:#ef4444; font-size:1.4rem;">10 / 20</span>
+                </div>
+            </div>
+
+            <!-- Player List -->
+            <div id="player-list">
+                <!-- Hero (Me) -->
+                <div class="player-row hero active">
+                    <div style="display:flex; flex-direction:column;">
+                        <span class="player-name">Hero (Me)</span>
+                        <div style="display:flex; align-items:center;">
+                             <span class="player-stack">$1500</span>
+                             <span class="player-bet">Bet: 20</span>
+                        </div>
+                    </div>
+                    <div style="font-size:0.8rem; color:#f59e0b;">DEALER</div>
+                </div>
+
+                <!-- Opponent 1 -->
+                <div class="player-row">
+                    <div style="display:flex; flex-direction:column;">
+                        <span class="player-name">CPU 1</span>
+                        <div style="display:flex; align-items:center;">
+                             <span class="player-stack">$980</span>
+                             <span class="player-bet">Bet: 20</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opponent 2 -->
+                <div class="player-row" style="opacity:0.6;">
+                    <div style="display:flex; flex-direction:column;">
+                        <span class="player-name">CPU 2</span>
+                        <div style="display:flex; align-items:center;">
+                             <span class="player-stack">$0</span>
+                             <span class="player-bet" style="background:#e53e3e;">FOLD</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="flex:1;"></div>
+            
+            <button class="btn" style="background:#4a5568; font-size:1rem; padding:8px; width:100%;">Menu</button>
+        </aside>
+
+        <!--/* Main Table Area */
+        <main id="table-area">
+            
+            <!-- Deck -->
+            <div id="deck-container">
+                <div class="deck-card"></div>
+                <div class="deck-card"></div>
+                <div class="deck-card"></div>
+                <div class="deck-count">52</div>
+            </div>
+
+            <!-- Discard Pile -->
+            <div id="discard-pile">
+                Discard
+            </div>
+
+            <!-- Community Cards & Pot -->
+            <div id="community-area">
+                <div id="community-cards">
+                    <!-- 公共牌占位 -->
+                    <div class="card" style="background-position: -142px -285px;"></div> <!-- S3 -->
+                    <div class="card" style="background-position: -710px 0px;"></div>   <!-- H10 -->
+                    <div class="card" style="background-position: -213px -95px;"></div> <!-- C3 -->
+                    <div class="card" style="opacity:0.3; background:rgba(0,0,0,0.5); border:1px dashed #fff;"></div>
+                    <div class="card" style="opacity:0.3; background:rgba(0,0,0,0.5); border:1px dashed #fff;"></div>
+                </div>
+
+                <div id="pot-display">
+                    POT: $120
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Action Area -->
+        <section id="action-area">
+            
+            <div id="controls">
+                <button class="btn btn-fold">Fold</button>
+                <button class="btn btn-check">Check</button>
+                <button class="btn btn-raise">Raise $20</button>
+            </div>
+
+            <div id="my-hand">
+                <!-- 手牌示例: A K Q J 10 -->
+                <!-- A Spades: Rank 1 -> x = -1*71, y = -3*95 -->
+                <div class="card selected" style="background-position: -71px -285px;"></div>
+                
+                <!-- K Hearts: Rank 13 -> x = -13*71, y = 0 -->
+                <div class="card" style="background-position: -923px 0px;"></div>
+
+                <!-- Q Clubs: Rank 12 -> x = -12*71, y = -95 -->
+                <div class="card" style="background-position: -852px -95px;"></div>
+
+                <!-- J Diamonds: Rank 11 -> x = -11*71, y = -190 -->
+                <div class="card" style="background-position: -781px -190px;"></div>
+                
+                <!-- 10 Spades: Rank 10 -> x = -10*71, y = -285 -->
+                <div class="card" style="background-position: -710px -285px;"></div>
+            </div>
+            
+            <div style="position:absolute; bottom:10px; right:20px; font-size:0.8rem; color:#718096;">
+                Hand: High Card
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- 简单的 Shader 脚本 -->
+    <script>
+        const canvas = document.getElementById("bg-canvas");
+        const gl = canvas.getContext("webgl");
+        
+        // 动画系统
+        class CardAnimator {
+            constructor() {
+                this.deckEl = document.getElementById('deck-container');
+                this.discardEl = document.getElementById('discard-pile');
+                this.handEl = document.getElementById('my-hand');
+                this.communityEl = document.getElementById('community-cards');
+            }
+
+            // 获取元素在屏幕上的绝对位置
+            getRect(el) {
+                return el.getBoundingClientRect();
+            }
+
+            // 发牌动画: 从 Deck 飞到 Target
+            dealCard(targetEl, delay = 0) {
+                const startRect = this.getRect(this.deckEl);
+                const endRect = this.getRect(targetEl);
+
+                // 创建临时飞行动画卡片
+                const flyingCard = document.createElement('div');
+                flyingCard.className = 'card deck-card';
+                flyingCard.style.position = 'fixed';
+                flyingCard.style.top = startRect.top + 'px';
+                flyingCard.style.left = startRect.left + 'px';
+                flyingCard.style.zIndex = 1000;
+                flyingCard.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                document.body.appendChild(flyingCard);
+
+                // 目标卡片先隐藏
+                targetEl.style.opacity = '0';
+
+                setTimeout(() => {
+                    flyingCard.style.top = endRect.top + 'px';
+                    flyingCard.style.left = endRect.left + 'px';
+                    // 如果是手牌，可能需要旋转或调整大小
+                    // 这里简单处理位置
+                }, 10 + delay);
+
+                setTimeout(() => {
+                    targetEl.style.opacity = '1';
+                    flyingCard.remove();
+                }, 410 + delay);
+            }
+
+            // 弃牌动画: 从 Source 飞到 Discard Pile
+            discardCard(sourceEl, delay = 0) {
+                const startRect = this.getRect(sourceEl);
+                const endRect = this.getRect(this.discardEl);
+
+                const flyingCard = sourceEl.cloneNode(true);
+                flyingCard.style.position = 'fixed';
+                flyingCard.style.top = startRect.top + 'px';
+                flyingCard.style.left = startRect.left + 'px';
+                flyingCard.style.margin = '0';
+                flyingCard.style.zIndex = 1000;
+                flyingCard.style.transition = 'all 0.4s ease-in';
+                // 清除选中状态样式影响
+                flyingCard.style.transform = 'none';
+                flyingCard.classList.remove('selected');
+                
+                document.body.appendChild(flyingCard);
+
+                // 源卡片隐藏或移除（这里演示隐藏）
+                sourceEl.style.opacity = '0';
+
+                setTimeout(() => {
+                    flyingCard.style.top = (endRect.top + 10) + 'px';
+                    flyingCard.style.left = (endRect.left + 10) + 'px';
+                    flyingCard.style.transform = 'scale(0.5) rotate(720deg)';
+                    flyingCard.style.opacity = '0';
+                }, 10 + delay);
+
+                setTimeout(() => {
+                    flyingCard.remove();
+                }, 410 + delay);
+            }
+        }
+
+        const animator = new CardAnimator();
+
+        // 绑定 Fold 按钮测试弃牌动画
+        document.querySelector('.btn-fold').addEventListener('click', () => {
+            const selectedCards = document.querySelectorAll('#my-hand .card.selected');
+            if (selectedCards.length > 0) {
+                selectedCards.forEach((card, i) => {
+                    animator.discardCard(card, i * 100);
+                });
+            } else {
+                // 如果没选牌，弃掉所有手牌
+                document.querySelectorAll('#my-hand .card').forEach((card, i) => {
+                    animator.discardCard(card, i * 50);
+                });
+            }
+        });
+
+        // 绑定 Check/Raise 测试发牌动画 (重新填充手牌)
+        document.querySelector('.btn-check').addEventListener('click', () => {
+            const hiddenCards = document.querySelectorAll('#my-hand .card[style*="opacity: 0"]');
+            hiddenCards.forEach((card, i) => {
+                animator.dealCard(card, i * 100);
+            });
+        });
+
+        const vertexShaderSource = `
+            attribute vec4 position;
+            void main() { gl_Position = position; }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+            uniform float time;
+            uniform vec2 resolution;
+            
+            void main() {
+                vec2 uv = gl_FragCoord.xy / resolution.xy;
+                // 简单的动态背景颜色
+                float t = time * 0.5;
+                vec3 col = 0.5 + 0.5*cos(t+uv.xyx+vec3(0,2,4));
+                // 模拟 Balatro 的漩涡效果 (简化版)
+                vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
+                float l = length(p);
+                float a = atan(p.y, p.x);
+                float v = sin(l * 10.0 - time * 2.0 + a * 5.0);
+                
+                vec3 baseColor = vec3(0.1, 0.2, 0.3); // Dark Blue
+                gl_FragColor = vec4(baseColor * (0.8 + 0.2 * v), 1.0);
+            }
+        `;
+
+        // 编译 Shader 的辅助函数
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader); return null;
+            }
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vertexShaderSource));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+        
+        const positionLocation = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        const timeLocation = gl.getUniformLocation(program, "time");
+        const resolutionLocation = gl.getUniformLocation(program, "resolution");
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function render(time) {
+            gl.uniform1f(timeLocation, time * 0.001);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+        
+        // 卡牌交互 Demo
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.classList.toggle('selected');
+            });
+        });
+    </script>
+</body>
+</html>

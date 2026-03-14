@@ -19,7 +19,7 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
         <div className="bg-[#0f172a] p-6 text-center border-b border-white/5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none"></div>
             <h2 className="text-2xl font-bold text-white relative z-10">本局结算</h2>
-            <div className="text-sm text-slate-400 mt-1 relative z-10">Winner Takes All</div>
+            <div className="text-sm text-slate-400 mt-1 relative z-10">赢家通吃</div>
         </div>
 
         {/* Winners List */}
@@ -80,7 +80,7 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
               </div>
               <div className="text-right">
                 <div className="text-xl font-bold text-green-400 font-mono">+{winner.amount}</div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Chips</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider">筹码</div>
               </div>
             </div>
           ))}

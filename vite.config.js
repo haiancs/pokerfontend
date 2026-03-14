@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/pokerfontend/',
   server: {
-    port: 5173,
+    port: 5174,
     proxy: {
       '/socket.io': {
         target: 'http://localhost:3000',

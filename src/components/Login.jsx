@@ -10,11 +10,12 @@ const Login = ({ onLogin }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (nickname && roomId) {
+      const parsedMaxPlayers = maxPlayers ? parseInt(maxPlayers, 10) : 9;
       onLogin({ 
         nickname, 
         roomId, 
-        maxHands: maxHands ? parseInt(maxHands) : null,
-        maxPlayers: maxPlayers ? parseInt(maxPlayers) : 9
+        maxHands: maxHands ? parseInt(maxHands, 10) : null,
+        maxPlayers: Number.isNaN(parsedMaxPlayers) ? 9 : Math.min(9, Math.max(2, parsedMaxPlayers))
       });
     }
   };
@@ -25,91 +26,108 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 p-6 text-white">
-      <div className="w-full max-w-md bg-slate-800/50 p-8 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">PokerSCI</h1>
-          <p className="text-slate-400 text-sm">德州扑克竞技场</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900 px-4 py-6 text-white sm:px-6">
+      <div className="absolute inset-0 bg-[url('/assets/img/card_backs.png')] bg-repeat opacity-5 animate-pulse" style={{ backgroundSize: '100px' }}></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-slate-900/35 to-black/60"></div>
+      
+      <div className="z-10 grid w-full max-w-5xl grid-cols-1 overflow-hidden rounded-2xl border border-white/10 bg-slate-800/80 shadow-2xl backdrop-blur-md md:grid-cols-2">
+        
+        <div className="flex flex-col items-center justify-center border-b border-white/10 px-6 py-8 md:border-b-0 md:border-r md:px-8">
+            <div className="relative mb-5 h-36 w-28 transition-transform duration-300 hover:scale-105 sm:h-44 sm:w-32">
+                 <div className="absolute inset-0 flex origin-bottom-left items-center justify-center rounded-lg border-2 border-black/20 bg-white rotate-[-15deg] text-3xl font-bold text-red-500 shadow-lg transition-transform hover:rotate-[-18deg] sm:text-4xl font-['m6x11plus']">
+                    A♥
+                 </div>
+                 <div className="absolute inset-0 z-10 flex translate-x-3 origin-bottom-right items-center justify-center rounded-lg border-2 border-black/20 bg-white rotate-[15deg] text-3xl font-bold text-black shadow-lg transition-transform hover:rotate-[18deg] sm:translate-x-4 sm:text-4xl font-['m6x11plus']">
+                    K♠
+                 </div>
+            </div>
+            <h1 className="mb-2 bg-gradient-to-b from-yellow-300 to-yellow-600 bg-clip-text text-5xl font-bold tracking-wider text-transparent drop-shadow-[0_2px_0_rgba(0,0,0,1)] sm:text-6xl font-['m6x11plus']">
+              PokerSCI
+            </h1>
+            <p className="mt-2 text-center text-base uppercase tracking-[0.2em] text-slate-300 sm:text-xl font-['m6x11plus']">
+              德州扑克竞技场
+            </p>
+            <div className="mt-5 rounded-lg border border-white/10 bg-black/25 px-4 py-2 text-center text-sm text-slate-300 sm:text-base font-['m6x11plus']">
+              快速开局 · 自动匹配房间参数 · 支持多人对战
+            </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">昵称</label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-              <input
-                type="text"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="输入你的昵称"
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">房间号</label>
-            <div className="relative flex gap-2">
-              <div className="relative flex-1">
-                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
+        <div className="flex flex-col justify-center px-5 py-7 sm:px-8 sm:py-8">
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+            <div className="space-y-2">
+                <label className="text-sm font-bold text-[#f59e0b] uppercase tracking-wider ml-1 font-['m6x11plus']">昵称</label>
+                <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
                 <input
-                  type="text"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  placeholder="输入房间号"
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all"
-                  required
+                    type="text"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="输入你的昵称"
+                    className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 py-3 pl-10 pr-4 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
+                    required
                 />
-              </div>
-              <button
-                type="button"
-                onClick={generateRoomId}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-xl transition-colors whitespace-nowrap"
-              >
-                随机生成
-              </button>
+                </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">总手数（选填，默认人数x2）</label>
-            <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-              <input
-                type="number"
-                value={maxHands}
-                onChange={(e) => setMaxHands(e.target.value)}
-                placeholder="例如：20"
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all"
-              />
+            <div className="space-y-2">
+                <label className="text-sm font-bold text-[#f59e0b] uppercase tracking-wider ml-1 font-['m6x11plus']">房间号</label>
+                <div className="relative flex gap-2">
+                <div className="relative flex-1">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
+                    <input
+                    type="text"
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    placeholder="输入房间号"
+                    className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 py-3 pl-10 pr-4 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
+                    required
+                    />
+                </div>
+                <button
+                    type="button"
+                    onClick={generateRoomId}
+                    className="h-12 rounded-lg border-2 border-slate-500 bg-slate-700 px-4 py-2 font-bold text-white transition-all hover:border-slate-400 hover:bg-slate-600 active:translate-y-1 font-['m6x11plus']"
+                >
+                    随机
+                </button>
+                </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">房间人数（选填，默认9人）</label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-              <input
-                type="number"
-                min="2"
-                max="9"
-                value={maxPlayers}
-                onChange={(e) => setMaxPlayers(e.target.value)}
-                placeholder="例如：6"
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1 font-['m6x11plus']">总手数</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={maxHands}
+                        onChange={(e) => setMaxHands(e.target.value)}
+                        placeholder="默认"
+                        className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 px-4 py-3 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1 font-['m6x11plus']">人数</label>
+                    <input
+                        type="number"
+                        min="2"
+                        max="9"
+                        value={maxPlayers}
+                        onChange={(e) => setMaxPlayers(e.target.value)}
+                        placeholder="9"
+                        className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 px-4 py-3 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
+                    />
+                </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-bold py-4 rounded-xl shadow-lg transform transition-all active:scale-95 flex items-center justify-center gap-2 group"
-          >
-            进入房间
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </form>
+            <button
+                type="submit"
+                className="mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl border-b-4 border-[#b91c1c] bg-[#ef4444] py-4 text-xl font-bold text-white shadow-lg transition-all hover:bg-[#dc2626] active:translate-y-1 active:border-b-0 sm:mt-4 sm:text-2xl group font-['m6x11plus']"
+            >
+                <span>进入游戏</span>
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+            </button>
+            </form>
+        </div>
       </div>
     </div>
   );
