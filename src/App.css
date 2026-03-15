@@ -47,10 +47,10 @@
 }
 
 :root {
-  --app-sidebar-width: 280px;
-  --info-panel-padding: 16px;
-  --info-panel-gap: 16px;
-  --info-panel-title-size: 1.5rem;
+  --app-sidebar-width: 248px;
+  --info-panel-padding: 14px;
+  --info-panel-gap: 12px;
+  --info-panel-title-size: 1.35rem;
 
   --app-table-padding: 12px;
   --poker-table-padding: 20px;
@@ -74,12 +74,12 @@
   --deck-width: 86px;
   --deck-height: 116px;
 
-  --action-buttons-gap: 16px;
-  --action-buttons-mb: 16px;
-  --action-button-px: 32px;
-  --action-button-py: 12px;
-  --action-button-min-width: 140px;
-  --action-button-font-size: 1.5rem;
+  --action-buttons-gap: 12px;
+  --action-buttons-mb: 12px;
+  --action-button-px: 22px;
+  --action-button-py: 9px;
+  --action-button-min-width: 116px;
+  --action-button-font-size: 1.2rem;
   --action-button-border-bottom: 4px;
 }
 
@@ -174,10 +174,10 @@
 
 @media (max-height: 680px) and (min-height: 561px) {
   :root {
-    --app-sidebar-width: 248px;
-    --info-panel-padding: 10px;
-    --info-panel-gap: 10px;
-    --info-panel-title-size: 1.25rem;
+    --app-sidebar-width: 226px;
+    --info-panel-padding: 9px;
+    --info-panel-gap: 8px;
+    --info-panel-title-size: 1.1rem;
 
     --app-table-padding: 10px;
     --poker-table-padding: 14px;
@@ -201,22 +201,22 @@
     --deck-width: 86px;
     --deck-height: 116px;
 
-    --action-buttons-gap: 10px;
-    --action-buttons-mb: 8px;
-    --action-button-px: 14px;
-    --action-button-py: 7px;
-    --action-button-min-width: 116px;
-    --action-button-font-size: 1.2rem;
+    --action-buttons-gap: 8px;
+    --action-buttons-mb: 6px;
+    --action-button-px: 12px;
+    --action-button-py: 6px;
+    --action-button-min-width: 102px;
+    --action-button-font-size: 1.05rem;
     --action-button-border-bottom: 3px;
   }
 }
 
 @media (max-height: 560px) and (min-height: 461px) {
   :root {
-    --app-sidebar-width: 232px;
-    --info-panel-padding: 8px;
-    --info-panel-gap: 8px;
-    --info-panel-title-size: 1.125rem;
+    --app-sidebar-width: 210px;
+    --info-panel-padding: 7px;
+    --info-panel-gap: 7px;
+    --info-panel-title-size: 1rem;
 
     --app-table-padding: 6px;
     --poker-table-padding: 8px;
@@ -240,22 +240,22 @@
     --deck-width: 86px;
     --deck-height: 116px;
 
-    --action-buttons-gap: 8px;
+    --action-buttons-gap: 6px;
     --action-buttons-mb: 4px;
-    --action-button-px: 10px;
+    --action-button-px: 8px;
     --action-button-py: 4px;
-    --action-button-min-width: 96px;
-    --action-button-font-size: 1.1rem;
+    --action-button-min-width: 90px;
+    --action-button-font-size: 0.98rem;
     --action-button-border-bottom: 2px;
   }
 }
 
 @media (max-height: 460px) and (min-height: 391px) {
   :root {
-    --app-sidebar-width: 220px;
-    --info-panel-padding: 7px;
-    --info-panel-gap: 6px;
-    --info-panel-title-size: 1rem;
+    --app-sidebar-width: 198px;
+    --info-panel-padding: 6px;
+    --info-panel-gap: 5px;
+    --info-panel-title-size: 0.9rem;
 
     --app-table-padding: 4px;
     --poker-table-padding: 4px;
@@ -279,22 +279,22 @@
     --deck-width: 86px;
     --deck-height: 116px;
 
-    --action-buttons-gap: 6px;
+    --action-buttons-gap: 4px;
     --action-buttons-mb: 3px;
-    --action-button-px: 8px;
+    --action-button-px: 7px;
     --action-button-py: 3px;
-    --action-button-min-width: 88px;
-    --action-button-font-size: 1rem;
+    --action-button-min-width: 82px;
+    --action-button-font-size: 0.9rem;
     --action-button-border-bottom: 2px;
   }
 }
 
 @media (max-height: 390px) {
   :root {
-    --app-sidebar-width: 208px;
-    --info-panel-padding: 6px;
-    --info-panel-gap: 5px;
-    --info-panel-title-size: 0.95rem;
+    --app-sidebar-width: 186px;
+    --info-panel-padding: 5px;
+    --info-panel-gap: 4px;
+    --info-panel-title-size: 0.85rem;
 
     --app-table-padding: 2px;
     --poker-table-padding: 2px;
@@ -318,12 +318,12 @@
     --deck-width: 86px;
     --deck-height: 116px;
 
-    --action-buttons-gap: 4px;
+    --action-buttons-gap: 3px;
     --action-buttons-mb: 2px;
-    --action-button-px: 6px;
+    --action-button-px: 5px;
     --action-button-py: 2px;
-    --action-button-min-width: 72px;
-    --action-button-font-size: 0.9rem;
+    --action-button-min-width: 66px;
+    --action-button-font-size: 0.82rem;
     --action-button-border-bottom: 2px;
   }
 }

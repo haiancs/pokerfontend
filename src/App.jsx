@@ -9,7 +9,7 @@ import HandResultModal from './components/HandResultModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import BackgroundShader from './components/BackgroundShader';
 import CardAnimator from './components/CardAnimator';
-import { getCardBackStyle } from './utils/cardUtils';
+import { LogOut } from 'lucide-react';
 import { playWinSound } from './utils/SoundManager';
 
 // Use environment variable or default to localhost:3000
@@ -303,7 +303,6 @@ function AppContent() {
   const currentRound = gameState.maxHands
     ? `${Math.min((gameState.handsPlayed || 0) + 1, gameState.maxHands)}/${gameState.maxHands}`
     : (gameState.handsPlayed || 0) + 1;
-  const backStyle = getCardBackStyle('RED');
   const handleExitGame = () => {
     if (confirm('确定要退出游戏吗？')) {
       localStorage.removeItem('poker_session');
@@ -383,21 +382,13 @@ function AppContent() {
                 myCards={myPlayer?.cards || []}
               />
             </div>
-            <aside className="deck-discard-col absolute right-4 bottom-5 z-30 flex flex-col gap-2 items-center">
-              <div id="deck" className="relative w-[71px] h-[95px]">
-                <div className="absolute inset-0 rounded border border-black/20 shadow-md translate-y-1 translate-x-1 z-10" style={backStyle}></div>
-                <div className="absolute inset-0 rounded border border-black/20 shadow-md translate-y-0.5 translate-x-0.5 z-20" style={backStyle}></div>
-                <div className="absolute inset-0 rounded border border-black/20 shadow-md z-30" style={backStyle}></div>
-              </div>
-              <div id="discard-pile" className="w-[71px] h-[95px] border-2 border-dashed border-white/20 rounded flex items-center justify-center opacity-50">
-                <span className="text-white/40 text-xs uppercase font-bold transform -rotate-12">弃牌</span>
-              </div>
-            </aside>
             <button
               onClick={handleExitGame}
-              className="fixed top-4 right-4 z-50 bg-slate-700/90 hover:bg-slate-600 text-white text-base py-2 px-4 rounded border-2 border-white/20 shadow-lg active:translate-y-1 transition-all uppercase"
+              aria-label="退出游戏"
+              title="退出游戏"
+              className="fixed top-4 right-4 z-50 h-10 w-10 flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
             >
-              退出游戏
+              <LogOut size={18} />
             </button>
             {showHandResult && (
               <HandResultModal
