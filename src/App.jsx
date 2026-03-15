@@ -28,6 +28,7 @@ function AppContent() {
   const [mobileDevice, setMobileDevice] = useState(isMobileDevice);
   const [portraitViewport, setPortraitViewport] = useState(() => window.innerHeight > window.innerWidth);
   const [forceLandscape, setForceLandscape] = useState(isMobileDevice);
+  const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
   // 游戏状态
   const [gameState, setGameState] = useState({
@@ -54,14 +55,22 @@ function AppContent() {
   useEffect(() => {
     const handleViewportChange = () => {
       setMobileDevice(isMobileDevice());
-      setPortraitViewport(window.innerHeight > window.innerWidth);
+      const visualViewport = window.visualViewport;
+      const viewportWidth = Math.round(visualViewport?.width || window.innerWidth);
+      const viewportHeight = Math.round(visualViewport?.height || window.innerHeight);
+      setPortraitViewport(viewportHeight > viewportWidth);
+      setViewportSize({ width: viewportWidth, height: viewportHeight });
     };
     handleViewportChange();
     window.addEventListener('resize', handleViewportChange);
     window.addEventListener('orientationchange', handleViewportChange);
+    window.visualViewport?.addEventListener('resize', handleViewportChange);
+    window.visualViewport?.addEventListener('scroll', handleViewportChange);
     return () => {
       window.removeEventListener('resize', handleViewportChange);
       window.removeEventListener('orientationchange', handleViewportChange);
+      window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
     };
   }, []);
 
@@ -304,10 +313,13 @@ function AppContent() {
   const rotateToLandscape = mobileDevice && portraitViewport && forceLandscape;
 
   return (
-    <div className="mobile-orientation-root">
+    <div
+      className="mobile-orientation-root"
+      style={{ '--mobile-vw': `${viewportSize.width}px`, '--mobile-vh': `${viewportSize.height}px` }}
+    >
       <div className={rotateToLandscape ? 'mobile-landscape-frame' : 'mobile-normal-frame'}>
         {!isLoggedIn ? (
-          <Login onLogin={handleLogin} />
+          <Login onLogin={handleLogin} forceLandscapeView={rotateToLandscape} />
         ) : (
           <div className="app-shell w-full h-full grid grid-cols-[280px_1fr] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-transparent text-white font-['m6x11plus'] relative">
             <BackgroundShader />

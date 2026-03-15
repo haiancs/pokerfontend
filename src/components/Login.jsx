@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, Hash, ArrowRight } from 'lucide-react';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, forceLandscapeView = false }) => {
   const [nickname, setNickname] = useState('');
   const [roomId, setRoomId] = useState('');
   const [maxHands, setMaxHands] = useState('');
@@ -26,14 +26,14 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900 px-4 py-6 text-white sm:px-6">
+    <div className={`relative flex overflow-hidden bg-slate-900 text-white ${forceLandscapeView ? 'h-full w-full items-stretch justify-center px-3 py-2' : 'min-h-screen items-center justify-center px-4 py-6 sm:px-6'}`}>
       <div className="absolute inset-0 bg-[url('/assets/img/card_backs.png')] bg-repeat opacity-5 animate-pulse" style={{ backgroundSize: '100px' }}></div>
       <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-slate-900/35 to-black/60"></div>
       
-      <div className="z-10 grid w-full max-w-5xl grid-cols-1 overflow-hidden rounded-2xl border border-white/10 bg-slate-800/80 shadow-2xl backdrop-blur-md md:grid-cols-2">
+      <div className={`z-10 grid w-full overflow-hidden border border-white/10 bg-slate-800/80 shadow-2xl backdrop-blur-md ${forceLandscapeView ? 'h-full max-w-none rounded-xl grid-cols-[minmax(240px,0.9fr)_minmax(0,1.1fr)]' : 'max-w-5xl rounded-2xl grid-cols-1 md:grid-cols-2'}`}>
         
-        <div className="flex flex-col items-center justify-center border-b border-white/10 px-6 py-8 md:border-b-0 md:border-r md:px-8">
-            <div className="relative mb-5 h-36 w-28 transition-transform duration-300 hover:scale-105 sm:h-44 sm:w-32">
+        <div className={`flex flex-col items-center justify-center border-white/10 ${forceLandscapeView ? 'border-r px-5 py-4' : 'border-b px-6 py-8 md:border-b-0 md:border-r md:px-8'}`}>
+            <div className={`relative transition-transform duration-300 hover:scale-105 ${forceLandscapeView ? 'mb-3 h-24 w-20' : 'mb-5 h-36 w-28 sm:h-44 sm:w-32'}`}>
                  <div className="absolute inset-0 flex origin-bottom-left items-center justify-center rounded-lg border-2 border-black/20 bg-white rotate-[-15deg] text-3xl font-bold text-red-500 shadow-lg transition-transform hover:rotate-[-18deg] sm:text-4xl font-['m6x11plus']">
                     A♥
                  </div>
@@ -41,19 +41,19 @@ const Login = ({ onLogin }) => {
                     K♠
                  </div>
             </div>
-            <h1 className="mb-2 bg-gradient-to-b from-yellow-300 to-yellow-600 bg-clip-text text-5xl font-bold tracking-wider text-transparent drop-shadow-[0_2px_0_rgba(0,0,0,1)] sm:text-6xl font-['m6x11plus']">
+            <h1 className={`bg-gradient-to-b from-yellow-300 to-yellow-600 bg-clip-text font-bold tracking-wider text-transparent drop-shadow-[0_2px_0_rgba(0,0,0,1)] font-['m6x11plus'] ${forceLandscapeView ? 'mb-1 text-4xl' : 'mb-2 text-5xl sm:text-6xl'}`}>
               PokerSCI
             </h1>
-            <p className="mt-2 text-center text-base uppercase tracking-[0.2em] text-slate-300 sm:text-xl font-['m6x11plus']">
+            <p className={`text-center uppercase tracking-[0.2em] text-slate-300 font-['m6x11plus'] ${forceLandscapeView ? 'mt-1 text-sm' : 'mt-2 text-base sm:text-xl'}`}>
               德州扑克竞技场
             </p>
-            <div className="mt-5 rounded-lg border border-white/10 bg-black/25 px-4 py-2 text-center text-sm text-slate-300 sm:text-base font-['m6x11plus']">
+            <div className={`rounded-lg border border-white/10 bg-black/25 px-4 text-center text-slate-300 font-['m6x11plus'] ${forceLandscapeView ? 'mt-3 py-1.5 text-xs leading-5' : 'mt-5 py-2 text-sm sm:text-base'}`}>
               快速开局 · 自动匹配房间参数 · 支持多人对战
             </div>
         </div>
 
-        <div className="flex flex-col justify-center px-5 py-7 sm:px-8 sm:py-8">
-            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+        <div className={`flex flex-col justify-center ${forceLandscapeView ? 'overflow-y-auto px-4 py-3' : 'px-5 py-7 sm:px-8 sm:py-8'}`}>
+            <form onSubmit={handleSubmit} className={forceLandscapeView ? 'space-y-3' : 'space-y-5 sm:space-y-6'}>
             <div className="space-y-2">
                 <label className="text-sm font-bold text-[#f59e0b] uppercase tracking-wider ml-1 font-['m6x11plus']">昵称</label>
                 <div className="relative">
@@ -93,7 +93,7 @@ const Login = ({ onLogin }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className={`grid ${forceLandscapeView ? 'grid-cols-2 gap-3' : 'grid-cols-1 gap-4 sm:grid-cols-2'}`}>
                 <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1 font-['m6x11plus']">总手数</label>
                     <input
@@ -121,7 +121,7 @@ const Login = ({ onLogin }) => {
 
             <button
                 type="submit"
-                className="mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl border-b-4 border-[#b91c1c] bg-[#ef4444] py-4 text-xl font-bold text-white shadow-lg transition-all hover:bg-[#dc2626] active:translate-y-1 active:border-b-0 sm:mt-4 sm:text-2xl group font-['m6x11plus']"
+                className={`flex w-full items-center justify-center gap-2 rounded-xl border-b-4 border-[#b91c1c] bg-[#ef4444] font-bold text-white shadow-lg transition-all hover:bg-[#dc2626] active:translate-y-1 active:border-b-0 group font-['m6x11plus'] ${forceLandscapeView ? 'mt-1 h-12 py-2 text-lg' : 'mt-2 h-14 py-4 text-xl sm:mt-4 sm:text-2xl'}`}
             >
                 <span>进入游戏</span>
                 <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
