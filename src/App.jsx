@@ -14,11 +14,20 @@ import { playWinSound } from './utils/SoundManager';
 
 // Use environment variable or default to localhost:3000
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return window.matchMedia('(pointer: coarse)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+};
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [room, setRoom] = useState(null);
   const socketRef = useRef(null);
+  const [mobileDevice, setMobileDevice] = useState(isMobileDevice);
+  const [portraitViewport, setPortraitViewport] = useState(() => window.innerHeight > window.innerWidth);
+  const [forceLandscape, setForceLandscape] = useState(isMobileDevice);
 
   // 游戏状态
   const [gameState, setGameState] = useState({
@@ -41,6 +50,20 @@ function AppContent() {
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverStats, setGameOverStats] = useState([]);
   const [hasConfirmedResult, setHasConfirmedResult] = useState(false);
+
+  useEffect(() => {
+    const handleViewportChange = () => {
+      setMobileDevice(isMobileDevice());
+      setPortraitViewport(window.innerHeight > window.innerWidth);
+    };
+    handleViewportChange();
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('orientationchange', handleViewportChange);
+    return () => {
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('orientationchange', handleViewportChange);
+    };
+  }, []);
 
   const handleLogin = ({ nickname, roomId, maxHands, maxPlayers, uid }) => {
     // Generate or use existing uid
@@ -265,10 +288,6 @@ function AppContent() {
       }
   };
 
-  if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   const myPlayer = gameState.players.find(p => p.isMe);
   const isMyTurn = myPlayer?.isActive || false;
   const showHandResult = gameState.winners && gameState.winners.length > 0 && !hasConfirmedResult;
@@ -282,138 +301,135 @@ function AppContent() {
       window.location.reload();
     }
   };
+  const rotateToLandscape = mobileDevice && portraitViewport && forceLandscape;
 
   return (
-    <div className="app-shell w-full h-full grid grid-cols-[280px_1fr] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-transparent text-white font-['m6x11plus'] relative">
-      <BackgroundShader />
-      <CardAnimator 
-        communityCards={gameState.communityCards} 
-        myHand={myPlayer?.cards || []} 
-        players={gameState.players}
-      />
-
-      {/* Left Sidebar: Info Panel */}
-      <div className="app-sidebar row-span-2 border-r border-white/10 bg-black/30 backdrop-blur-sm z-10 overflow-y-auto scrollbar-thin">
-         <InfoPanel 
-            players={gameState.players} 
-         />
-      </div>
-
-      {/* Main Content: Poker Table (Top Right) */}
-      <div className="app-table-region relative flex flex-col items-center justify-center px-4 pt-14 pb-4 min-h-0 overflow-hidden">
-         <div className="absolute top-3 left-4 right-4 z-20">
-            <div className="flex items-center justify-center gap-3 rounded-lg border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-sm">
-               <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
-                  <span className="text-slate-400 text-xs">盲注</span>
-                  <span className="ml-2 text-[#ef4444] text-base font-bold">{gameState.bigBlind / 2} / {gameState.bigBlind}</span>
-               </div>
-               <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
-                  <span className="text-slate-400 text-xs">回合</span>
-                  <span className="ml-2 text-[#3b82f6] text-base font-bold">{currentRound}</span>
-               </div>
-               <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
-                  <span className="text-slate-400 text-xs">底池</span>
-                  <span className="ml-2 text-[#f59e0b] text-base font-bold">${gameState.pot || 0}</span>
-               </div>
+    <div className="mobile-orientation-root">
+      <div className={rotateToLandscape ? 'mobile-landscape-frame' : 'mobile-normal-frame'}>
+        {!isLoggedIn ? (
+          <Login onLogin={handleLogin} />
+        ) : (
+          <div className="app-shell w-full h-full grid grid-cols-[280px_1fr] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-transparent text-white font-['m6x11plus'] relative">
+            <BackgroundShader />
+            <CardAnimator
+              communityCards={gameState.communityCards}
+              myHand={myPlayer?.cards || []}
+              players={gameState.players}
+            />
+            <div className="app-sidebar row-span-2 border-r border-white/10 bg-black/30 backdrop-blur-sm z-10 overflow-y-auto scrollbar-thin">
+              <InfoPanel
+                players={gameState.players}
+              />
             </div>
-         </div>
-         <PokerTable 
-            communityCards={gameState.communityCards} 
-            pot={gameState.pot}
-         />
-         
-         {/* Waiting/Ready State Overlay */}
-         {gameState.state === 'WAITING' && (
-             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
-                 <div className="flex flex-col items-center gap-4 p-8 bg-black/80 rounded-xl border border-white/20 shadow-2xl">
-                     <h2 className="text-2xl text-[#f59e0b] animate-pulse">等待玩家加入...</h2>
-                     {gameState.players.length >= 2 ? (
-                         <button 
-                            onClick={handleReady}
-                            className="px-8 py-3 rounded-lg font-bold text-xl bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-lg transition-transform active:scale-95 border-b-4 border-[#15803d]"
-                         >
-                            我准备好了
-                         </button>
-                     ) : (
-                         <p className="text-slate-400">至少需要2名玩家开始游戏</p>
-                     )}
-                 </div>
-             </div>
-         )}
-      </div>
-
-      {/* Bottom Actions: Action Panel (Bottom Right) */}
-      <div className="app-action-row h-auto z-20">
-         <ActionPanel 
-            onAction={handleAction}
-            amountToCall={Math.max(0, gameState.currentBet - (myPlayer?.bet || 0))}
-            minBet={gameState.minRaise} 
-            maxBet={myPlayer?.stack || 0}
-            bigBlind={gameState.bigBlind}
-            disabled={!isMyTurn}
-            myCards={myPlayer?.cards || []}
-         />
-      </div>
-      <aside className="deck-discard-col absolute right-4 bottom-5 z-30 flex flex-col gap-2 items-center">
-        <div id="deck" className="relative w-[71px] h-[95px]">
-          <div className="absolute inset-0 rounded border border-black/20 shadow-md translate-y-1 translate-x-1 z-10" style={backStyle}></div>
-          <div className="absolute inset-0 rounded border border-black/20 shadow-md translate-y-0.5 translate-x-0.5 z-20" style={backStyle}></div>
-          <div className="absolute inset-0 rounded border border-black/20 shadow-md z-30" style={backStyle}></div>
-        </div>
-        <div id="discard-pile" className="w-[71px] h-[95px] border-2 border-dashed border-white/20 rounded flex items-center justify-center opacity-50">
-          <span className="text-white/40 text-xs uppercase font-bold transform -rotate-12">弃牌</span>
-        </div>
-      </aside>
-
-      <button
-        onClick={handleExitGame}
-        className="fixed top-4 right-4 z-50 bg-slate-700/90 hover:bg-slate-600 text-white text-base py-2 px-4 rounded border-2 border-white/20 shadow-lg active:translate-y-1 transition-all uppercase"
-      >
-        退出游戏
-      </button>
-
-      {/* Modals */}
-      {showHandResult && (
-        <HandResultModal 
-          winners={gameState.winners} 
-          communityCards={gameState.communityCards}
-          onContinue={handleReady}
-          players={gameState.players}
-          myPlayer={myPlayer}
-          showdown={gameState.showdown}
-        />
-      )}
-
-      {showGameOver && (
-        <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
-           <div className="bg-[#1e293b] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl">
-              <h2 className="text-4xl font-bold text-center text-[#f59e0b] mb-6 font-['m6x11plus']">游戏结束</h2>
-              <div className="space-y-4 mb-8">
-                 {gameOverStats.map((p, i) => (
-                    <div key={i} className="flex justify-between items-center p-4 bg-black/40 rounded-lg border border-white/5">
-                       <div className="flex items-center gap-3">
-                          <span className={`text-2xl font-bold ${i===0 ? 'text-[#f59e0b]' : 'text-slate-400'}`}>#{i+1}</span>
+            <div className="app-table-region relative flex flex-col items-center justify-center px-4 pt-14 pb-4 min-h-0 overflow-hidden">
+              <div className="absolute top-3 left-4 right-4 z-20">
+                <div className="flex items-center justify-center gap-3 rounded-lg border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-sm">
+                  <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
+                    <span className="text-slate-400 text-xs">盲注</span>
+                    <span className="ml-2 text-[#ef4444] text-base font-bold">{gameState.bigBlind / 2} / {gameState.bigBlind}</span>
+                  </div>
+                  <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
+                    <span className="text-slate-400 text-xs">回合</span>
+                    <span className="ml-2 text-[#3b82f6] text-base font-bold">{currentRound}</span>
+                  </div>
+                  <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
+                    <span className="text-slate-400 text-xs">底池</span>
+                    <span className="ml-2 text-[#f59e0b] text-base font-bold">${gameState.pot || 0}</span>
+                  </div>
+                </div>
+              </div>
+              <PokerTable
+                communityCards={gameState.communityCards}
+                pot={gameState.pot}
+              />
+              {gameState.state === 'WAITING' && (
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+                  <div className="flex flex-col items-center gap-4 p-8 bg-black/80 rounded-xl border border-white/20 shadow-2xl">
+                    <h2 className="text-2xl text-[#f59e0b] animate-pulse">等待玩家加入...</h2>
+                    {gameState.players.length >= 2 ? (
+                      <button
+                        onClick={handleReady}
+                        className="px-8 py-3 rounded-lg font-bold text-xl bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-lg transition-transform active:scale-95 border-b-4 border-[#15803d]"
+                      >
+                        我准备好了
+                      </button>
+                    ) : (
+                      <p className="text-slate-400">至少需要2名玩家开始游戏</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="app-action-row h-auto z-20">
+              <ActionPanel
+                onAction={handleAction}
+                amountToCall={Math.max(0, gameState.currentBet - (myPlayer?.bet || 0))}
+                minBet={gameState.minRaise}
+                maxBet={myPlayer?.stack || 0}
+                bigBlind={gameState.bigBlind}
+                disabled={!isMyTurn}
+                myCards={myPlayer?.cards || []}
+              />
+            </div>
+            <aside className="deck-discard-col absolute right-4 bottom-5 z-30 flex flex-col gap-2 items-center">
+              <div id="deck" className="relative w-[71px] h-[95px]">
+                <div className="absolute inset-0 rounded border border-black/20 shadow-md translate-y-1 translate-x-1 z-10" style={backStyle}></div>
+                <div className="absolute inset-0 rounded border border-black/20 shadow-md translate-y-0.5 translate-x-0.5 z-20" style={backStyle}></div>
+                <div className="absolute inset-0 rounded border border-black/20 shadow-md z-30" style={backStyle}></div>
+              </div>
+              <div id="discard-pile" className="w-[71px] h-[95px] border-2 border-dashed border-white/20 rounded flex items-center justify-center opacity-50">
+                <span className="text-white/40 text-xs uppercase font-bold transform -rotate-12">弃牌</span>
+              </div>
+            </aside>
+            <button
+              onClick={handleExitGame}
+              className="fixed top-4 right-4 z-50 bg-slate-700/90 hover:bg-slate-600 text-white text-base py-2 px-4 rounded border-2 border-white/20 shadow-lg active:translate-y-1 transition-all uppercase"
+            >
+              退出游戏
+            </button>
+            {showHandResult && (
+              <HandResultModal
+                winners={gameState.winners}
+                communityCards={gameState.communityCards}
+                onContinue={handleReady}
+                players={gameState.players}
+                myPlayer={myPlayer}
+                showdown={gameState.showdown}
+              />
+            )}
+            {showGameOver && (
+              <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
+                <div className="bg-[#1e293b] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl">
+                  <h2 className="text-4xl font-bold text-center text-[#f59e0b] mb-6 font-['m6x11plus']">游戏结束</h2>
+                  <div className="space-y-4 mb-8">
+                    {gameOverStats.map((p, i) => (
+                      <div key={i} className="flex justify-between items-center p-4 bg-black/40 rounded-lg border border-white/5">
+                        <div className="flex items-center gap-3">
+                          <span className={`text-2xl font-bold ${i === 0 ? 'text-[#f59e0b]' : 'text-slate-400'}`}>#{i + 1}</span>
                           <span className="text-xl">{p.name}</span>
-                       </div>
-                       <span className="text-[#f59e0b] font-bold text-xl">${p.stack}</span>
-                    </div>
-                 ))}
+                        </div>
+                        <span className="text-[#f59e0b] font-bold text-xl">${p.stack}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-4">
+                    <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-slate-700 rounded-lg font-bold hover:bg-slate-600">退出</button>
+                    <button onClick={handleRestart} className="flex-1 py-3 bg-[#f59e0b] text-black rounded-lg font-bold hover:bg-[#d97706]">再来一局</button>
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-4">
-                  <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-slate-700 rounded-lg font-bold hover:bg-slate-600">退出</button>
-                  <button onClick={handleRestart} className="flex-1 py-3 bg-[#f59e0b] text-black rounded-lg font-bold hover:bg-[#d97706]">再来一局</button>
-              </div>
-           </div>
-        </div>
-      )}
-      
-      {/* Mobile Orientation Warning */}
-      <div className="fixed inset-0 bg-black z-[100] flex-col items-center justify-center text-center p-8 hidden portrait:flex">
-          <div className="text-6xl mb-4">📱↔️</div>
-          <h2 className="text-2xl text-[#ef4444] mb-2">请旋转设备</h2>
-          <p className="text-slate-400">本游戏仅支持横屏模式</p>
+            )}
+          </div>
+        )}
       </div>
-
+      {mobileDevice && (
+        <button
+          onClick={() => setForceLandscape(prev => !prev)}
+          className="mobile-orientation-toggle"
+        >
+          {forceLandscape ? '切换竖屏' : '切换横屏'}
+        </button>
+      )}
     </div>
   );
 }
