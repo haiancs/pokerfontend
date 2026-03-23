@@ -10,7 +10,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e:ui": "playwright test --config=playwright.config.js",
+    "test:e2e:ui:headed": "playwright test --headed --config=playwright.config.js"
   },
   "dependencies": {
     "clsx": "^2.1.1",

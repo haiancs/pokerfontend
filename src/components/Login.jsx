@@ -1,21 +1,52 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { User, Hash, ArrowRight } from 'lucide-react';
 
-const Login = ({ onLogin, forceLandscapeView = false }) => {
+const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '' }) => {
   const [nickname, setNickname] = useState('');
   const [roomId, setRoomId] = useState('');
   const [maxHands, setMaxHands] = useState('');
   const [maxPlayers, setMaxPlayers] = useState('');
+  const [roomIdFromLink, setRoomIdFromLink] = useState(false);
+  const [isWeChatBrowser, setIsWeChatBrowser] = useState(false);
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  const cardBacksUrl = `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}assets/img/card_backs.png`;
+  const lockRoomConfig = roomIdFromLink;
+
+  const resolvedPresetRoomId = useMemo(() => {
+    if (presetRoomId) {
+      return String(presetRoomId).trim();
+    }
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('roomId') || '').trim();
+  }, [presetRoomId]);
+
+  useEffect(() => {
+    if (resolvedPresetRoomId) {
+      setRoomId(resolvedPresetRoomId);
+      setRoomIdFromLink(true);
+    }
+  }, [resolvedPresetRoomId]);
+
+  useEffect(() => {
+    const ua = navigator.userAgent || '';
+    setIsWeChatBrowser(/MicroMessenger/i.test(ua));
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (nickname && roomId) {
       const parsedMaxPlayers = maxPlayers ? parseInt(maxPlayers, 10) : 9;
+      const normalizedRoomId = roomId.trim();
+      const roomConfig = lockRoomConfig
+        ? { maxHands: null, maxPlayers: null }
+        : {
+            maxHands: maxHands ? parseInt(maxHands, 10) : null,
+            maxPlayers: Number.isNaN(parsedMaxPlayers) ? 9 : Math.min(9, Math.max(2, parsedMaxPlayers))
+          };
       onLogin({ 
         nickname, 
-        roomId, 
-        maxHands: maxHands ? parseInt(maxHands, 10) : null,
-        maxPlayers: Number.isNaN(parsedMaxPlayers) ? 9 : Math.min(9, Math.max(2, parsedMaxPlayers))
+        roomId: normalizedRoomId,
+        ...roomConfig
       });
     }
   };
@@ -25,9 +56,31 @@ const Login = ({ onLogin, forceLandscapeView = false }) => {
     setRoomId(randomId);
   };
 
+  const handleOpenInBrowser = async () => {
+    const currentUrl = window.location.href;
+    const newWindow = window.open(currentUrl, '_blank', 'noopener,noreferrer');
+    if (newWindow) {
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(currentUrl);
+        alert('已复制当前链接，请在系统浏览器粘贴并打开。');
+      } else {
+        alert(`请复制并在系统浏览器打开：${currentUrl}`);
+      }
+    } catch {
+      alert(`请复制并在系统浏览器打开：${currentUrl}`);
+    }
+  };
+
   return (
     <div className={`relative flex overflow-hidden bg-slate-900 text-white ${forceLandscapeView ? 'h-full w-full items-stretch justify-center px-3 py-2' : 'min-h-screen items-center justify-center px-4 py-6 sm:px-6'}`}>
-      <div className="absolute inset-0 bg-[url('/assets/img/card_backs.png')] bg-repeat opacity-5 animate-pulse" style={{ backgroundSize: '100px' }}></div>
+      <div
+        className="absolute inset-0 bg-repeat opacity-5 animate-pulse"
+        style={{ backgroundSize: '100px', backgroundImage: `url('${cardBacksUrl}')` }}
+      ></div>
       <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-slate-900/35 to-black/60"></div>
       
       <div className={`z-10 grid w-full overflow-hidden border border-white/10 bg-slate-800/80 shadow-2xl backdrop-blur-md ${forceLandscapeView ? 'h-full max-w-none rounded-xl grid-cols-[minmax(240px,0.9fr)_minmax(0,1.1fr)]' : 'max-w-5xl rounded-2xl grid-cols-1 md:grid-cols-2'}`}>
@@ -78,14 +131,16 @@ const Login = ({ onLogin, forceLandscapeView = false }) => {
                     type="text"
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
-                    placeholder="输入房间号"
+                    placeholder={roomIdFromLink ? '来自分享链接' : '输入房间号'}
                     className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 py-3 pl-10 pr-4 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
                     required
+                    readOnly={roomIdFromLink}
                     />
                 </div>
                 <button
                     type="button"
                     onClick={generateRoomId}
+                    disabled={roomIdFromLink}
                     className="h-12 rounded-lg border-2 border-slate-500 bg-slate-700 px-4 py-2 font-bold text-white transition-all hover:border-slate-400 hover:bg-slate-600 active:translate-y-1 font-['m6x11plus']"
                 >
                     随机
@@ -93,7 +148,7 @@ const Login = ({ onLogin, forceLandscapeView = false }) => {
                 </div>
             </div>
 
-            <div className={`grid ${forceLandscapeView ? 'grid-cols-2 gap-3' : 'grid-cols-1 gap-4 sm:grid-cols-2'}`}>
+            <div className={`grid ${forceLandscapeView ? 'grid-cols-2 gap-3' : 'grid-cols-1 gap-4 sm:grid-cols-2'} ${lockRoomConfig ? 'opacity-60' : ''}`}>
                 <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1 font-['m6x11plus']">总手数</label>
                     <input
@@ -101,8 +156,9 @@ const Login = ({ onLogin, forceLandscapeView = false }) => {
                         min="1"
                         value={maxHands}
                         onChange={(e) => setMaxHands(e.target.value)}
-                        placeholder="默认"
+                        placeholder={lockRoomConfig ? '分享链接已锁定' : '默认'}
                         className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 px-4 py-3 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
+                        disabled={lockRoomConfig}
                     />
                 </div>
                 <div className="space-y-2">
@@ -113,8 +169,9 @@ const Login = ({ onLogin, forceLandscapeView = false }) => {
                         max="9"
                         value={maxPlayers}
                         onChange={(e) => setMaxPlayers(e.target.value)}
-                        placeholder="9"
+                        placeholder={lockRoomConfig ? '分享链接已锁定' : '9'}
                         className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 px-4 py-3 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
+                        disabled={lockRoomConfig}
                     />
                 </div>
             </div>
@@ -126,6 +183,15 @@ const Login = ({ onLogin, forceLandscapeView = false }) => {
                 <span>进入游戏</span>
                 <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </button>
+            {isWeChatBrowser && (
+              <button
+                type="button"
+                onClick={handleOpenInBrowser}
+                className="w-full rounded-xl border-2 border-sky-500/70 bg-sky-600/20 py-3 text-base font-bold text-sky-200 transition-all hover:bg-sky-500/30 active:translate-y-0.5 font-['m6x11plus']"
+              >
+                去浏览器打开
+              </button>
+            )}
             </form>
         </div>
       </div>

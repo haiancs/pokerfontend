@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import './App.css';
 import PokerTable from './components/PokerTable';
@@ -10,7 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import BackgroundShader from './components/BackgroundShader';
 import CardAnimator from './components/CardAnimator';
 import ToastContainer from './components/ToastContainer';
-import { LogOut } from 'lucide-react';
+import { LogOut, Share2 } from 'lucide-react';
 import { playWinSound } from './utils/SoundManager';
 
 // Use environment variable or default to localhost:3000
@@ -23,6 +23,10 @@ const isMobileDevice = () => {
 };
 
 function AppContent() {
+  const sharedRoomId = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('roomId') || '').trim();
+  }, []);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [room, setRoom] = useState(null);
   const [sessionUserId, setSessionUserId] = useState(null);
@@ -33,6 +37,7 @@ function AppContent() {
   const [forceLandscape, setForceLandscape] = useState(isMobileDevice);
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const [tableNotices, setTableNotices] = useState([]);
+  const [shareInProgress, setShareInProgress] = useState(false);
 
   // 游戏状态
   const [gameState, setGameState] = useState({
@@ -293,13 +298,59 @@ function AppContent() {
     });
   };
 
+  const buildRoomShareUrl = (roomId) => {
+    if (!roomId) return '';
+    const url = new URL(window.location.href);
+    url.searchParams.set('roomId', roomId);
+    return url.toString();
+  };
+
+  const handleShareRoom = async () => {
+    const roomId = room?.roomId;
+    if (!roomId || shareInProgress) return;
+
+    const shareUrl = buildRoomShareUrl(roomId);
+    if (!shareUrl) {
+      pushTableNotice('分享链接生成失败，请稍后重试', 'error');
+      return;
+    }
+
+    setShareInProgress(true);
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `PokerSCI 房间 ${roomId}`,
+          text: `加入我的德州扑克房间：${roomId}`,
+          url: shareUrl
+        });
+        pushTableNotice('分享面板已打开，可直接分享到微信', 'success');
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        pushTableNotice(`已复制分享链接：房间 ${roomId}`, 'success');
+        return;
+      }
+
+      pushTableNotice(`请手动复制链接：${shareUrl}`, 'warning');
+    } catch (error) {
+      if (error?.name !== 'AbortError') {
+        pushTableNotice('分享失败，请稍后重试', 'error');
+      }
+    } finally {
+      setShareInProgress(false);
+    }
+  };
+
   useEffect(() => {
     let loginTimeout;
     const session = localStorage.getItem('poker_session');
     if (session) {
         try {
             const { nickname, roomId, uid, maxHands, maxPlayers } = JSON.parse(session);
-            if (nickname && roomId && uid) {
+            const shouldRestore = !sharedRoomId || sharedRoomId === roomId;
+            if (nickname && roomId && uid && shouldRestore) {
                 console.log('Restoring session:', { nickname, roomId, uid });
                 loginTimeout = setTimeout(() => {
                     handleLogin({ nickname, roomId, maxHands, maxPlayers, uid });
@@ -321,7 +372,7 @@ function AppContent() {
         socketRef.current.disconnect();
       }
     };
-  }, []);
+  }, [sharedRoomId]);
 
   const handleAction = (action, amount) => {
     console.log(`Action: ${action}, Amount: ${amount}`);
@@ -389,7 +440,11 @@ function AppContent() {
     >
       <div className={rotateToLandscape ? 'mobile-landscape-frame' : 'mobile-normal-frame'}>
         {!isLoggedIn ? (
-          <Login onLogin={handleLogin} forceLandscapeView={rotateToLandscape} />
+          <Login
+            onLogin={handleLogin}
+            forceLandscapeView={rotateToLandscape}
+            presetRoomId={sharedRoomId}
+          />
         ) : (
           <div className="app-shell w-full h-full grid grid-cols-[280px_1fr] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-transparent text-white font-['m6x11plus'] relative">
             <BackgroundShader />
@@ -398,7 +453,7 @@ function AppContent() {
               myHand={myPlayer?.cards || []}
               players={gameState.players}
             />
-            <div className="app-sidebar row-span-2 border-r border-white/10 bg-black/30 backdrop-blur-sm z-10 overflow-y-auto scrollbar-thin">
+            <div className="app-sidebar row-span-2 border-r border-white/10 bg-black/30 backdrop-blur-sm z-10 overflow-hidden">
               <InfoPanel
                 players={gameState.players}
               />
@@ -488,6 +543,16 @@ function AppContent() {
               className="fixed top-4 right-4 z-50 h-10 w-10 flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
             >
               <LogOut size={18} />
+            </button>
+            <button
+              onClick={handleShareRoom}
+              aria-label="分享房间"
+              title={shareInProgress ? '正在分享...' : '分享房间'}
+              disabled={shareInProgress}
+              className="fixed top-4 right-16 z-50 h-10 px-3 flex items-center justify-center gap-1 bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-emerald-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
+            >
+              <Share2 size={16} />
+              <span className="text-xs">分享</span>
             </button>
             <ToastContainer toasts={tableNotices} />
             {showHandResult && (
