@@ -59,32 +59,33 @@
 
   --app-table-padding: 12px;
   --poker-table-padding: 20px;
-  --community-gap: 16px;
-  --community-margin-bottom: 64px;
-  --community-slot-min-height: 146px;
-  --community-main-min-width: 286px;
-  --community-side-min-width: 118px;
-  --community-main-px: 20px;
-  --community-side-px: 14px;
-  --community-slot-py: 12px;
-  --community-card-width: 71px;
-  --community-card-height: 95px;
+  --community-gap: 12px;
+  --community-margin-bottom: 0px;
+  --community-translate-y: 22px;
+  --community-slot-min-height: 116px;
+  --community-main-min-width: 226px;
+  --community-side-min-width: 96px;
+  --community-main-px: 14px;
+  --community-side-px: 10px;
+  --community-slot-py: 8px;
+  --community-card-width: 58px;
+  --community-card-height: 78px;
 
   --action-panel-padding: 16px;
-  --action-top-row-gap: 24px;
-  --action-top-row-mb: 20px;
-  --hand-row-height: 132px;
-  --player-card-width: 71px;
-  --player-card-height: 95px;
-  --deck-width: 71px;
-  --deck-height: 95px;
+  --action-top-row-gap: 14px;
+  --action-top-row-mb: 12px;
+  --hand-row-height: 100px;
+  --player-card-width: 58px;
+  --player-card-height: 78px;
+  --deck-width: 58px;
+  --deck-height: 78px;
 
   --action-buttons-gap: 12px;
   --action-buttons-mb: 12px;
-  --action-button-px: 22px;
-  --action-button-py: 9px;
-  --action-button-min-width: 116px;
-  --action-button-font-size: 1.2rem;
+  --action-button-px: 16px;
+  --action-button-py: 7px;
+  --action-button-min-width: 100px;
+  --action-button-font-size: 1rem;
   --action-button-border-bottom: 4px;
 }
 
@@ -113,6 +114,7 @@
 .community-row {
   gap: var(--community-gap) !important;
   margin-bottom: var(--community-margin-bottom) !important;
+  transform: translateY(var(--community-translate-y)) !important;
 }
 
 .community-row>div {
@@ -186,32 +188,33 @@
 
     --app-table-padding: 10px;
     --poker-table-padding: 14px;
-    --community-gap: 10px;
-    --community-margin-bottom: 22px;
-    --community-slot-min-height: 108px;
-    --community-main-min-width: 200px;
-    --community-side-min-width: 78px;
+    --community-gap: 9px;
+    --community-margin-bottom: 0px;
+    --community-translate-y: 16px;
+    --community-slot-min-height: 96px;
+    --community-main-min-width: 182px;
+    --community-side-min-width: 74px;
     --community-main-px: 10px;
     --community-side-px: 8px;
-    --community-slot-py: 10px;
-    --community-card-width: 71px;
-    --community-card-height: 95px;
+    --community-slot-py: 7px;
+    --community-card-width: 52px;
+    --community-card-height: 70px;
 
     --action-panel-padding: 10px;
-    --action-top-row-gap: 18px;
-    --action-top-row-mb: 14px;
-    --hand-row-height: 90px;
-    --player-card-width: 71px;
-    --player-card-height: 95px;
-    --deck-width: 71px;
-    --deck-height: 95px;
+    --action-top-row-gap: 14px;
+    --action-top-row-mb: 10px;
+    --hand-row-height: 84px;
+    --player-card-width: 52px;
+    --player-card-height: 70px;
+    --deck-width: 52px;
+    --deck-height: 70px;
 
     --action-buttons-gap: 8px;
     --action-buttons-mb: 6px;
-    --action-button-px: 12px;
+    --action-button-px: 10px;
     --action-button-py: 6px;
-    --action-button-min-width: 102px;
-    --action-button-font-size: 1.05rem;
+    --action-button-min-width: 88px;
+    --action-button-font-size: 0.92rem;
     --action-button-border-bottom: 3px;
   }
 }
@@ -225,32 +228,33 @@
 
     --app-table-padding: 6px;
     --poker-table-padding: 8px;
-    --community-gap: 8px;
-    --community-margin-bottom: 12px;
-    --community-slot-min-height: 92px;
-    --community-main-min-width: 178px;
+    --community-gap: 7px;
+    --community-margin-bottom: 0px;
+    --community-translate-y: 12px;
+    --community-slot-min-height: 86px;
+    --community-main-min-width: 164px;
     --community-side-min-width: 62px;
     --community-main-px: 8px;
     --community-side-px: 6px;
-    --community-slot-py: 8px;
-    --community-card-width: 71px;
-    --community-card-height: 95px;
+    --community-slot-py: 6px;
+    --community-card-width: 48px;
+    --community-card-height: 64px;
 
     --action-panel-padding: 8px;
-    --action-top-row-gap: 14px;
+    --action-top-row-gap: 12px;
     --action-top-row-mb: 8px;
-    --hand-row-height: 78px;
-    --player-card-width: 71px;
-    --player-card-height: 95px;
-    --deck-width: 71px;
-    --deck-height: 95px;
+    --hand-row-height: 72px;
+    --player-card-width: 48px;
+    --player-card-height: 64px;
+    --deck-width: 48px;
+    --deck-height: 64px;
 
     --action-buttons-gap: 6px;
     --action-buttons-mb: 4px;
     --action-button-px: 8px;
     --action-button-py: 4px;
-    --action-button-min-width: 90px;
-    --action-button-font-size: 0.98rem;
+    --action-button-min-width: 82px;
+    --action-button-font-size: 0.86rem;
     --action-button-border-bottom: 2px;
   }
 }
@@ -264,32 +268,33 @@
 
     --app-table-padding: 4px;
     --poker-table-padding: 4px;
-    --community-gap: 6px;
-    --community-margin-bottom: 6px;
-    --community-slot-min-height: 84px;
-    --community-main-min-width: 162px;
+    --community-gap: 5px;
+    --community-margin-bottom: 0px;
+    --community-translate-y: 9px;
+    --community-slot-min-height: 78px;
+    --community-main-min-width: 146px;
     --community-side-min-width: 56px;
     --community-main-px: 6px;
     --community-side-px: 4px;
-    --community-slot-py: 6px;
-    --community-card-width: 71px;
-    --community-card-height: 95px;
+    --community-slot-py: 5px;
+    --community-card-width: 44px;
+    --community-card-height: 60px;
 
     --action-panel-padding: 6px;
-    --action-top-row-gap: 10px;
+    --action-top-row-gap: 8px;
     --action-top-row-mb: 6px;
-    --hand-row-height: 70px;
-    --player-card-width: 71px;
-    --player-card-height: 95px;
-    --deck-width: 71px;
-    --deck-height: 95px;
+    --hand-row-height: 66px;
+    --player-card-width: 44px;
+    --player-card-height: 60px;
+    --deck-width: 44px;
+    --deck-height: 60px;
 
     --action-buttons-gap: 4px;
     --action-buttons-mb: 3px;
     --action-button-px: 7px;
     --action-button-py: 3px;
-    --action-button-min-width: 82px;
-    --action-button-font-size: 0.9rem;
+    --action-button-min-width: 76px;
+    --action-button-font-size: 0.8rem;
     --action-button-border-bottom: 2px;
   }
 }
@@ -303,32 +308,33 @@
 
     --app-table-padding: 2px;
     --poker-table-padding: 2px;
-    --community-gap: 4px;
-    --community-margin-bottom: 4px;
-    --community-slot-min-height: 72px;
-    --community-main-min-width: 148px;
+    --community-gap: 3px;
+    --community-margin-bottom: 0px;
+    --community-translate-y: 6px;
+    --community-slot-min-height: 66px;
+    --community-main-min-width: 132px;
     --community-side-min-width: 52px;
     --community-main-px: 4px;
     --community-side-px: 3px;
-    --community-slot-py: 4px;
-    --community-card-width: 71px;
-    --community-card-height: 95px;
+    --community-slot-py: 3px;
+    --community-card-width: 40px;
+    --community-card-height: 54px;
 
     --action-panel-padding: 4px;
-    --action-top-row-gap: 8px;
+    --action-top-row-gap: 6px;
     --action-top-row-mb: 4px;
-    --hand-row-height: 62px;
-    --player-card-width: 71px;
-    --player-card-height: 95px;
-    --deck-width: 71px;
-    --deck-height: 95px;
+    --hand-row-height: 58px;
+    --player-card-width: 40px;
+    --player-card-height: 54px;
+    --deck-width: 40px;
+    --deck-height: 54px;
 
     --action-buttons-gap: 3px;
     --action-buttons-mb: 2px;
     --action-button-px: 5px;
     --action-button-py: 2px;
-    --action-button-min-width: 66px;
-    --action-button-font-size: 0.82rem;
+    --action-button-min-width: 62px;
+    --action-button-font-size: 0.75rem;
     --action-button-border-bottom: 2px;
   }
 }

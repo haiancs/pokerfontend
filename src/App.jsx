@@ -10,7 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import BackgroundShader from './components/BackgroundShader';
 import CardAnimator from './components/CardAnimator';
 import ToastContainer from './components/ToastContainer';
-import { LogOut, Share2 } from 'lucide-react';
+import { LogOut, Share2, RefreshCw } from 'lucide-react';
 import { playWinSound } from './utils/SoundManager';
 
 // Use environment variable or default to localhost:3000
@@ -39,17 +39,6 @@ function AppContent() {
   const [tableNotices, setTableNotices] = useState([]);
   const [shareInProgress, setShareInProgress] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [orientationFabPos, setOrientationFabPos] = useState({ x: 0, y: 0 });
-  const [orientationFabReady, setOrientationFabReady] = useState(false);
-  const orientationFabDragRef = useRef({
-    dragging: false,
-    moved: false,
-    pointerId: null,
-    startX: 0,
-    startY: 0,
-    originX: 0,
-    originY: 0
-  });
 
   // 游戏状态
   const [gameState, setGameState] = useState({
@@ -465,80 +454,6 @@ function AppContent() {
     }
   };
   const rotateToLandscape = mobileDevice && portraitViewport && forceLandscape;
-  const fabWidth = 118;
-  const fabHeight = 44;
-  const fabGap = 12;
-  const clampFabPosition = (x, y) => {
-    const maxX = Math.max(fabGap, viewportSize.width - fabWidth - fabGap);
-    const maxY = Math.max(fabGap, viewportSize.height - fabHeight - fabGap);
-    return {
-      x: Math.min(Math.max(fabGap, x), maxX),
-      y: Math.min(Math.max(fabGap, y), maxY)
-    };
-  };
-
-  useEffect(() => {
-    if (!mobileDevice) {
-      setOrientationFabReady(false);
-      return;
-    }
-    if (!orientationFabReady) {
-      setOrientationFabPos({
-        x: Math.max(fabGap, viewportSize.width - fabWidth - fabGap),
-        y: Math.max(fabGap, viewportSize.height - fabHeight - fabGap)
-      });
-      setOrientationFabReady(true);
-      return;
-    }
-    setOrientationFabPos((prev) => clampFabPosition(prev.x, prev.y));
-  }, [mobileDevice, viewportSize.width, viewportSize.height, orientationFabReady]);
-
-  const handleOrientationFabPointerDown = (e) => {
-    if (!mobileDevice) return;
-    e.preventDefault();
-    const drag = orientationFabDragRef.current;
-    drag.dragging = true;
-    drag.moved = false;
-    drag.pointerId = e.pointerId;
-    drag.startX = e.clientX;
-    drag.startY = e.clientY;
-    drag.originX = orientationFabPos.x;
-    drag.originY = orientationFabPos.y;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-  };
-
-  const handleOrientationFabPointerMove = (e) => {
-    const drag = orientationFabDragRef.current;
-    if (!drag.dragging || drag.pointerId !== e.pointerId) return;
-    const dx = e.clientX - drag.startX;
-    const dy = e.clientY - drag.startY;
-    if (!drag.moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
-      drag.moved = true;
-    }
-    const next = clampFabPosition(drag.originX + dx, drag.originY + dy);
-    setOrientationFabPos(next);
-  };
-
-  const handleOrientationFabPointerUp = (e) => {
-    const drag = orientationFabDragRef.current;
-    if (drag.pointerId !== e.pointerId) return;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-    const moved = drag.moved;
-    drag.dragging = false;
-    drag.pointerId = null;
-    drag.moved = false;
-    if (!moved) {
-      setForceLandscape((prev) => !prev);
-    }
-  };
-
-  const handleOrientationFabPointerCancel = (e) => {
-    const drag = orientationFabDragRef.current;
-    if (drag.pointerId !== e.pointerId) return;
-    drag.dragging = false;
-    drag.pointerId = null;
-    drag.moved = false;
-  };
 
   return (
     <div
@@ -566,20 +481,20 @@ function AppContent() {
                 players={gameState.players}
               />
             </div>
-            <div className="app-table-region relative flex flex-col items-center justify-center px-4 pt-14 pb-4 min-h-0 overflow-hidden">
-              <div className="absolute top-3 left-4 right-4 z-20">
-                <div className="flex items-center justify-center gap-3 rounded-lg border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-sm">
-                  <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
-                    <span className="text-slate-400 text-xs">盲注</span>
-                    <span className="ml-2 text-[#ef4444] text-base font-bold">{gameState.bigBlind / 2} / {gameState.bigBlind}</span>
+            <div className="app-table-region relative flex flex-col items-center justify-center px-4 pt-20 pb-3 min-h-0 overflow-hidden">
+              <div className="absolute top-2 left-4 right-4 z-20">
+                <div className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-black/45 px-2.5 py-1.5 backdrop-blur-sm">
+                  <div className="px-2.5 py-1 rounded bg-black/30 border border-white/10">
+                    <span className="text-slate-400 text-[11px]">盲注</span>
+                    <span className="ml-2 text-[#ef4444] text-sm font-bold">{gameState.bigBlind / 2} / {gameState.bigBlind}</span>
                   </div>
-                  <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
-                    <span className="text-slate-400 text-xs">回合</span>
-                    <span className="ml-2 text-[#3b82f6] text-base font-bold">{currentRound}</span>
+                  <div className="px-2.5 py-1 rounded bg-black/30 border border-white/10">
+                    <span className="text-slate-400 text-[11px]">回合</span>
+                    <span className="ml-2 text-[#3b82f6] text-sm font-bold">{currentRound}</span>
                   </div>
-                  <div className="px-3 py-1 rounded bg-black/30 border border-white/10">
-                    <span className="text-slate-400 text-xs">底池</span>
-                    <span className="ml-2 text-[#f59e0b] text-base font-bold">${gameState.pot || 0}</span>
+                  <div className="px-2.5 py-1 rounded bg-black/30 border border-white/10">
+                    <span className="text-slate-400 text-[11px]">底池</span>
+                    <span className="ml-2 text-[#f59e0b] text-sm font-bold">${gameState.pot || 0}</span>
                   </div>
                 </div>
               </div>
@@ -637,31 +552,42 @@ function AppContent() {
               <ActionPanel
                 onAction={handleAction}
                 amountToCall={Math.max(0, gameState.currentBet - (myPlayer?.bet || 0))}
-                minBet={gameState.minRaise}
-                maxBet={myPlayer?.stack || 0}
+                minBet={Math.max(1, gameState.minTotalRaiseTo || ((gameState.currentBet || 0) + (gameState.minRaise || 20)))}
+                maxBet={(myPlayer?.bet || 0) + (myPlayer?.stack || 0)}
                 bigBlind={gameState.bigBlind}
                 disabled={!isMyTurn}
                 myCards={myPlayer?.cards || []}
               />
             </div>
-            <button
-              onClick={handleExitGame}
-              aria-label="退出游戏"
-              title="退出游戏"
-              className="fixed top-4 right-4 z-50 h-10 w-10 flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
-            >
-              <LogOut size={18} />
-            </button>
-            <button
-              onClick={handleShareRoom}
-              aria-label="分享房间"
-              title={shareInProgress ? '正在分享...' : '分享房间'}
-              disabled={shareInProgress}
-              className="fixed top-4 right-16 z-50 h-10 px-3 flex items-center justify-center gap-1 bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-emerald-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
-            >
-              <Share2 size={16} />
-              <span className="text-xs">分享</span>
-            </button>
+            <div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2">
+              {mobileDevice && (
+                <button
+                  aria-label={forceLandscape ? '切换竖屏' : '切换横屏'}
+                  title={forceLandscape ? '切换竖屏' : '切换横屏'}
+                  onClick={() => setForceLandscape((prev) => !prev)}
+                  className="h-10 w-10 flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
+                >
+                  <RefreshCw size={16} />
+                </button>
+              )}
+              <button
+                onClick={handleShareRoom}
+                aria-label="分享房间"
+                title={shareInProgress ? '正在分享...' : '分享房间'}
+                disabled={shareInProgress}
+                className="h-10 w-10 flex items-center justify-center bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-emerald-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
+              >
+                <Share2 size={16} />
+              </button>
+              <button
+                onClick={handleExitGame}
+                aria-label="退出游戏"
+                title="退出游戏"
+                className="h-10 w-10 flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
             <ToastContainer toasts={tableNotices} />
             {showHandResult && (
               <HandResultModal
@@ -698,18 +624,6 @@ function AppContent() {
           </div>
         )}
       </div>
-      {mobileDevice && (
-        <button
-          className="mobile-orientation-toggle"
-          style={{ left: `${orientationFabPos.x}px`, top: `${orientationFabPos.y}px` }}
-          onPointerDown={handleOrientationFabPointerDown}
-          onPointerMove={handleOrientationFabPointerMove}
-          onPointerUp={handleOrientationFabPointerUp}
-          onPointerCancel={handleOrientationFabPointerCancel}
-        >
-          {forceLandscape ? '切换竖屏' : '切换横屏'}
-        </button>
-      )}
     </div>
   );
 }

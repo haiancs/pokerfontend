@@ -17,7 +17,8 @@ const ActionPanel = ({
   // const backStyle = getCardBackStyle('RED');
   
   // 安全范围校验
-  const safeMinBet = Math.min(minBet, maxBet);
+  const safeMaxBet = Math.max(1, maxBet);
+  const safeMinBet = Math.max(1, Math.min(minBet, safeMaxBet));
   
   React.useEffect(() => {
       if (!disabled) {
@@ -27,7 +28,7 @@ const ActionPanel = ({
 
   const handleBetChange = (amount) => {
     if (disabled) return;
-    const newAmount = Math.max(safeMinBet, Math.min(maxBet, amount));
+    const newAmount = Math.max(safeMinBet, Math.min(safeMaxBet, amount));
     setBetAmount(newAmount);
   };
 
@@ -118,7 +119,7 @@ const ActionPanel = ({
           {/* RAISE */}
           <div className="relative raise-control-group">
               <button 
-                onClick={(e) => {
+                onClick={() => {
                     // 如果已经是加注模式，直接加注；否则如果是移动端或为了更好的交互，先打开面板
                     // 这里简化逻辑：点击按钮如果面板未开，则打开面板；如果面板已开，则执行加注
                     // 或者更直接：长按/Hover显示面板，点击按钮直接提交。
@@ -195,7 +196,7 @@ const ActionPanel = ({
                     // 为了调数值，提供一个显式的 toggle 区域（例如按钮右侧 1/4 区域，或者单独一个小按钮）。
                     // 鉴于 UI 紧凑，我们在按钮右侧加一个 chevron up/down 图标作为 toggle。
                     
-                    handleActionClick(amountToCall > 0 ? 'raise' : 'bet', betAmount)
+                    handleActionClick('raise', betAmount)
                 }}
                 disabled={disabled}
                 className={clsx(
@@ -228,7 +229,7 @@ const ActionPanel = ({
                     if (!showRaiseSlider) {
                         setShowRaiseSlider(true);
                     } else {
-                        handleActionClick(amountToCall > 0 ? 'raise' : 'bet', betAmount);
+                        handleActionClick('raise', betAmount);
                         setShowRaiseSlider(false);
                     }
                 }}
@@ -252,8 +253,8 @@ const ActionPanel = ({
                   </div>
                   <input 
                     type="range" 
-                    min={minBet} 
-                    max={maxBet} 
+                    min={safeMinBet} 
+                    max={safeMaxBet} 
                     step={bigBlind}
                     value={betAmount}
                     onChange={(e) => handleBetChange(Number(e.target.value))}
@@ -263,7 +264,7 @@ const ActionPanel = ({
                   <div className="sm:hidden pt-1 border-t border-white/10 mt-1">
                       <button 
                         onClick={() => {
-                            handleActionClick(amountToCall > 0 ? 'raise' : 'bet', betAmount);
+                            handleActionClick('raise', betAmount);
                             setShowRaiseSlider(false);
                         }}
                         className="w-full py-2 bg-[#f59e0b] text-black font-bold rounded-lg uppercase"
