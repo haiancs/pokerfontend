@@ -454,6 +454,7 @@ function AppContent() {
     }
   };
   const rotateToLandscape = mobileDevice && portraitViewport && forceLandscape;
+  const compactLandscapeViewport = viewportSize.height <= 380 && viewportSize.width >= 700;
 
   return (
     <div
@@ -467,6 +468,7 @@ function AppContent() {
             forceLandscapeView={rotateToLandscape}
             presetRoomId={sharedRoomId}
             isConnecting={isConnecting}
+            compactViewport={compactLandscapeViewport}
           />
         ) : (
           <div className="app-shell w-full h-full grid grid-cols-[280px_1fr] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-transparent text-white font-['m6x11plus'] relative">
@@ -481,7 +483,7 @@ function AppContent() {
                 players={gameState.players}
               />
             </div>
-            <div className="app-table-region relative flex flex-col items-center justify-center px-4 pt-20 pb-3 min-h-0 overflow-hidden">
+            <div className={`app-table-region relative flex flex-col items-center justify-center px-4 ${compactLandscapeViewport ? 'pt-12' : 'pt-20'} pb-3 min-h-0 overflow-hidden`}>
               <div className="absolute top-2 left-4 right-4 z-20">
                 <div className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-black/45 px-2.5 py-1.5 backdrop-blur-sm">
                   <div className="px-2.5 py-1 rounded bg-black/30 border border-white/10">
@@ -503,9 +505,9 @@ function AppContent() {
                 pot={gameState.pot}
               />
               {gameState.state === 'WAITING' && (
-                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
-                  <div className="flex flex-col items-center gap-4 p-8 bg-black/80 rounded-xl border border-white/20 shadow-2xl">
-                    <h2 className="text-2xl text-[#f59e0b] animate-pulse">
+                <div className="fixed inset-0 z-[140] flex flex-col items-center justify-center bg-black/55 backdrop-blur-sm p-4">
+                  <div className="flex flex-col items-center gap-4 p-6 sm:p-8 bg-black/80 rounded-xl border border-white/20 shadow-2xl w-[min(92vw,34rem)] max-h-[calc(100dvh-3rem)] overflow-y-auto">
+                    <h2 className="text-xl sm:text-2xl text-[#f59e0b] animate-pulse text-center">
                       {isInitialWaiting ? '首局准备中' : '等待下一手开始'}
                     </h2>
                     {gameState.players.length >= 2 ? (
@@ -559,35 +561,6 @@ function AppContent() {
                 myCards={myPlayer?.cards || []}
               />
             </div>
-            <div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2">
-              {mobileDevice && (
-                <button
-                  aria-label={forceLandscape ? '切换竖屏' : '切换横屏'}
-                  title={forceLandscape ? '切换竖屏' : '切换横屏'}
-                  onClick={() => setForceLandscape((prev) => !prev)}
-                  className="h-10 w-10 flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
-                >
-                  <RefreshCw size={16} />
-                </button>
-              )}
-              <button
-                onClick={handleShareRoom}
-                aria-label="分享房间"
-                title={shareInProgress ? '正在分享...' : '分享房间'}
-                disabled={shareInProgress}
-                className="h-10 w-10 flex items-center justify-center bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-emerald-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
-              >
-                <Share2 size={16} />
-              </button>
-              <button
-                onClick={handleExitGame}
-                aria-label="退出游戏"
-                title="退出游戏"
-                className="h-10 w-10 flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all"
-              >
-                <LogOut size={18} />
-              </button>
-            </div>
             <ToastContainer toasts={tableNotices} />
             {showHandResult && (
               <HandResultModal
@@ -600,21 +573,21 @@ function AppContent() {
               />
             )}
             {showGameOver && (
-              <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
-                <div className="bg-[#1e293b] rounded-2xl p-8 max-w-lg w-full border border-white/10 shadow-2xl">
-                  <h2 className="text-4xl font-bold text-center text-[#f59e0b] mb-6 font-['m6x11plus']">游戏结束</h2>
-                  <div className="space-y-4 mb-8">
+              <div className="fixed inset-0 bg-black/90 z-[60] flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto">
+                <div className="bg-[#1e293b] rounded-2xl p-5 sm:p-8 max-w-lg w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] border border-white/10 shadow-2xl flex flex-col my-auto">
+                  <h2 className="text-3xl sm:text-4xl font-bold text-center text-[#f59e0b] mb-5 sm:mb-6 font-['m6x11plus'] shrink-0">游戏结束</h2>
+                  <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 flex-1 min-h-0 overflow-y-auto pr-1">
                     {gameOverStats.map((p, i) => (
                       <div key={i} className="flex justify-between items-center p-4 bg-black/40 rounded-lg border border-white/5">
                         <div className="flex items-center gap-3">
                           <span className={`text-2xl font-bold ${i === 0 ? 'text-[#f59e0b]' : 'text-slate-400'}`}>#{i + 1}</span>
-                          <span className="text-xl">{p.name}</span>
+                          <span className="text-lg sm:text-xl truncate">{p.name}</span>
                         </div>
-                        <span className="text-[#f59e0b] font-bold text-xl">${p.stack}</span>
+                        <span className="text-[#f59e0b] font-bold text-lg sm:text-xl">${p.stack}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex gap-3 sm:gap-4 shrink-0">
                     <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-slate-700 rounded-lg font-bold hover:bg-slate-600">退出</button>
                     <button onClick={handleRestart} className="flex-1 py-3 bg-[#f59e0b] text-black rounded-lg font-bold hover:bg-[#d97706]">再来一局</button>
                   </div>
@@ -624,6 +597,39 @@ function AppContent() {
           </div>
         )}
       </div>
+      {mobileDevice && (
+        <div className={`fixed z-[55] flex flex-col items-end ${compactLandscapeViewport ? 'right-2 bottom-2 gap-1.5' : 'right-4 bottom-4 gap-2'}`}>
+          <button
+            aria-label={forceLandscape ? '切换竖屏' : '切换横屏'}
+            title={forceLandscape ? '切换竖屏' : '切换横屏'}
+            onClick={() => setForceLandscape((prev) => !prev)}
+            className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
+          >
+            <RefreshCw size={compactLandscapeViewport ? 14 : 16} />
+          </button>
+          {isLoggedIn && (
+            <>
+              <button
+                onClick={handleShareRoom}
+                aria-label="分享房间"
+                title={shareInProgress ? '正在分享...' : '分享房间'}
+                disabled={shareInProgress}
+                className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-emerald-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
+              >
+                <Share2 size={compactLandscapeViewport ? 14 : 16} />
+              </button>
+              <button
+                onClick={handleExitGame}
+                aria-label="退出游戏"
+                title="退出游戏"
+                className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
+              >
+                <LogOut size={compactLandscapeViewport ? 15 : 18} />
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

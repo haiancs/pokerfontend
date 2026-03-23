@@ -13,18 +13,18 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
   });
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-[#1e293b] rounded-2xl border border-white/10 w-full max-w-md shadow-2xl overflow-hidden transform transition-all scale-100">
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fade-in">
+      <div className="bg-[#1e293b] rounded-2xl border border-white/10 w-full max-w-md max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col my-auto pointer-events-auto">
         
         {/* Header */}
-        <div className="bg-[#0f172a] p-6 text-center border-b border-white/5 relative overflow-hidden">
+        <div className="bg-[#0f172a] p-4 sm:p-6 text-center border-b border-white/5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none"></div>
-            <h2 className="text-2xl font-bold text-white relative z-10">本局结算</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white relative z-10">本局结算</h2>
             <div className="text-sm text-slate-400 mt-1 relative z-10">赢家通吃</div>
         </div>
 
         {/* Winners List */}
-        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 flex-1 min-h-0 overflow-y-auto">
           {showdown && (
             <div className="bg-slate-900/60 border border-white/10 rounded-xl p-4 space-y-4">
               <div>
@@ -42,8 +42,8 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
                 <div className="text-xs text-slate-400 mb-2">存活玩家手牌</div>
                 <div className="space-y-2">
                   {alivePlayers.map((player, idx) => (
-                    <div key={`alive-${idx}`} className="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2 border border-white/5">
-                      <span className="text-sm font-semibold text-white">{player.name}</span>
+                    <div key={`alive-${idx}`} className="flex items-center justify-between gap-2 bg-slate-800/70 rounded-lg px-3 py-2 border border-white/5">
+                      <span className="text-sm font-semibold text-white truncate">{player.name}</span>
                       <div className="flex items-center gap-1.5">
                         {player.cards.map((card, cardIdx) => (
                           <div key={`alive-${idx}-card-${cardIdx}`} className="w-9 h-12">
@@ -69,18 +69,18 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
                 )}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-xl">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-700 flex items-center justify-center text-lg sm:text-xl shrink-0">
                     {idx === 0 ? '👑' : '🎉'}
                 </div>
-                <div>
-                    <div className="font-bold text-white text-lg">{winner.name}</div>
+                <div className="min-w-0">
+                    <div className="font-bold text-white text-base sm:text-lg truncate">{winner.name}</div>
                     <div className="text-xs text-slate-400">
                         {winner.handRankText ? winner.handRankText : (winner.handRank !== undefined ? `牌型等级: ${winner.handRank}` : '赢家')}
                     </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-xl font-bold text-green-400 font-mono">+{winner.amount}</div>
+                <div className="text-lg sm:text-xl font-bold text-green-400 font-mono">+{winner.amount}</div>
                 <div className="text-[10px] text-slate-500 uppercase tracking-wider">筹码</div>
               </div>
             </div>
@@ -88,15 +88,15 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 pt-2 bg-[#1e293b]">
+        <div className="p-4 sm:p-6 pt-2 bg-[#1e293b] border-t border-white/5 shrink-0 sticky bottom-0">
             <button 
                 onClick={onContinue}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 group"
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 sm:py-4 rounded-xl text-base sm:text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 group min-h-[48px]"
             >
                 <span>继续下一局</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
             </button>
-            <div className="text-center mt-3 text-xs text-slate-500">
+            <div className="text-center mt-3 text-xs text-slate-500 pb-[max(2px,env(safe-area-inset-bottom))]">
                 点击继续以准备开始下一手牌
             </div>
         </div>

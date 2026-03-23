@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User, Hash, ArrowRight } from 'lucide-react';
 
-const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConnecting = false }) => {
+const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConnecting = false, compactViewport = false }) => {
   const [nickname, setNickname] = useState('');
   const [roomId, setRoomId] = useState('');
   const [maxHands, setMaxHands] = useState('');
@@ -11,6 +11,7 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
   const baseUrl = import.meta.env.BASE_URL || '/';
   const cardBacksUrl = `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}assets/img/card_backs.png`;
   const lockRoomConfig = roomIdFromLink;
+  const lowHeightCompact = compactViewport && !forceLandscapeView;
 
   const resolvedPresetRoomId = useMemo(() => {
     if (presetRoomId) {
@@ -76,17 +77,17 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
   };
 
   return (
-    <div className={`relative flex overflow-hidden bg-slate-900 text-white ${forceLandscapeView ? 'h-full w-full items-stretch justify-center px-3 py-2' : 'min-h-screen items-center justify-center px-4 py-6 sm:px-6'}`}>
+    <div className={`relative flex bg-slate-900 text-white ${forceLandscapeView ? `h-full w-full items-stretch justify-center overflow-y-auto ${compactViewport ? 'px-1 py-1' : 'px-2 py-2'}` : (lowHeightCompact ? 'h-full w-full items-start justify-center px-2 py-2 overflow-y-auto' : 'min-h-screen items-center justify-center px-4 py-6 sm:px-6 overflow-hidden')}`}>
       <div
         className="absolute inset-0 bg-repeat opacity-5 animate-pulse"
         style={{ backgroundSize: '100px', backgroundImage: `url('${cardBacksUrl}')` }}
       ></div>
       <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-slate-900/35 to-black/60"></div>
       
-      <div className={`z-10 grid w-full overflow-hidden border border-white/10 bg-slate-800/80 shadow-2xl backdrop-blur-md ${forceLandscapeView ? 'h-full max-w-none rounded-xl grid-cols-[minmax(240px,0.9fr)_minmax(0,1.1fr)]' : 'max-w-5xl rounded-2xl grid-cols-1 md:grid-cols-2'}`}>
+      <div className={`z-10 grid w-full border border-white/10 bg-slate-800/80 shadow-2xl backdrop-blur-md ${forceLandscapeView ? `min-h-full max-h-full max-w-none rounded-xl overflow-hidden ${compactViewport ? 'grid-cols-[minmax(170px,0.75fr)_minmax(0,1.25fr)]' : 'grid-cols-[minmax(210px,0.85fr)_minmax(0,1.15fr)]'}` : (lowHeightCompact ? 'max-h-full rounded-xl overflow-hidden grid-cols-[minmax(180px,0.78fr)_minmax(0,1.22fr)]' : 'max-w-5xl rounded-2xl grid-cols-1 sm:grid-cols-2 overflow-hidden')}`}>
         
-        <div className={`flex flex-col items-center justify-center border-white/10 ${forceLandscapeView ? 'border-r px-5 py-4' : 'border-b px-6 py-8 md:border-b-0 md:border-r md:px-8'}`}>
-            <div className={`relative transition-transform duration-300 hover:scale-105 ${forceLandscapeView ? 'mb-3 h-24 w-20' : 'mb-5 h-36 w-28 sm:h-44 sm:w-32'}`}>
+        <div className={`flex flex-col items-center justify-center border-white/10 ${forceLandscapeView ? `border-r ${compactViewport ? 'px-3 py-2' : 'px-4 py-3'}` : (lowHeightCompact ? 'border-r px-3 py-2' : 'border-b px-6 py-8 sm:border-b-0 sm:border-r sm:px-8')}`}>
+            <div className={`relative transition-transform duration-300 hover:scale-105 ${forceLandscapeView ? `${compactViewport ? 'mb-2 h-20 w-16' : 'mb-3 h-24 w-20'}` : (lowHeightCompact ? 'mb-2 h-20 w-16' : 'mb-5 h-36 w-28 sm:h-44 sm:w-32')}`}>
                  <div className="absolute inset-0 flex origin-bottom-left items-center justify-center rounded-lg border-2 border-black/20 bg-white rotate-[-15deg] text-3xl font-bold text-red-500 shadow-lg transition-transform hover:rotate-[-18deg] sm:text-4xl font-['m6x11plus']">
                     A♥
                  </div>
@@ -94,19 +95,19 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
                     K♠
                  </div>
             </div>
-            <h1 className={`bg-gradient-to-b from-yellow-300 to-yellow-600 bg-clip-text font-bold tracking-wider text-transparent drop-shadow-[0_2px_0_rgba(0,0,0,1)] font-['m6x11plus'] ${forceLandscapeView ? 'mb-1 text-4xl' : 'mb-2 text-5xl sm:text-6xl'}`}>
+            <h1 className={`bg-gradient-to-b from-yellow-300 to-yellow-600 bg-clip-text font-bold tracking-wider text-transparent drop-shadow-[0_2px_0_rgba(0,0,0,1)] font-['m6x11plus'] ${forceLandscapeView ? (compactViewport ? 'mb-0.5 text-2xl' : 'mb-1 text-3xl') : (lowHeightCompact ? 'mb-0.5 text-2xl' : 'mb-2 text-5xl sm:text-6xl')}`}>
               PokerSCI
             </h1>
-            <p className={`text-center uppercase tracking-[0.2em] text-slate-300 font-['m6x11plus'] ${forceLandscapeView ? 'mt-1 text-sm' : 'mt-2 text-base sm:text-xl'}`}>
+            <p className={`text-center uppercase tracking-[0.2em] text-slate-300 font-['m6x11plus'] ${forceLandscapeView ? (compactViewport ? 'mt-0.5 text-[11px]' : 'mt-1 text-sm') : (lowHeightCompact ? 'mt-0.5 text-[11px]' : 'mt-2 text-base sm:text-xl')}`}>
               德州扑克竞技场
             </p>
-            <div className={`rounded-lg border border-white/10 bg-black/25 px-4 text-center text-slate-300 font-['m6x11plus'] ${forceLandscapeView ? 'mt-3 py-1.5 text-xs leading-5' : 'mt-5 py-2 text-sm sm:text-base'}`}>
+            <div className={`rounded-lg border border-white/10 bg-black/25 px-3 text-center text-slate-300 font-['m6x11plus'] ${forceLandscapeView ? (compactViewport ? 'mt-1.5 py-1 text-[10px] leading-4' : 'mt-2 py-1 text-[11px] leading-4') : (lowHeightCompact ? 'mt-1.5 py-1 text-[10px] leading-4' : 'mt-5 py-2 text-sm sm:text-base')}`}>
               快速开局 · 自动匹配房间参数 · 支持多人对战
             </div>
         </div>
 
-        <div className={`flex flex-col justify-center ${forceLandscapeView ? 'overflow-y-auto px-4 py-3' : 'px-5 py-7 sm:px-8 sm:py-8'}`}>
-            <form onSubmit={handleSubmit} className={forceLandscapeView ? 'space-y-3' : 'space-y-5 sm:space-y-6'}>
+        <div className={`flex flex-col justify-center min-h-0 ${forceLandscapeView ? `overflow-y-auto ${compactViewport ? 'px-2.5 py-2' : 'px-3 py-2.5'}` : (lowHeightCompact ? 'overflow-y-auto px-2.5 py-2' : 'px-5 py-7 sm:px-8 sm:py-8')}`}>
+            <form onSubmit={handleSubmit} className={forceLandscapeView ? (compactViewport ? 'space-y-2.5' : 'space-y-3') : (lowHeightCompact ? 'space-y-2.5' : 'space-y-5 sm:space-y-6')}>
             <div className="space-y-2">
                 <label className="text-sm font-bold text-[#f59e0b] uppercase tracking-wider ml-1 font-['m6x11plus']">昵称</label>
                 <div className="relative">
