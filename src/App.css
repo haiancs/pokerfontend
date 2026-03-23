@@ -34,16 +34,21 @@
 
 .mobile-orientation-toggle {
   position: fixed;
-  right: 12px;
-  bottom: 12px;
+  left: 12px;
+  top: 12px;
   z-index: 140;
   border: 2px solid rgba(255, 255, 255, 0.25);
-  border-radius: 10px;
+  border-radius: 999px;
   background: rgba(15, 23, 42, 0.9);
   color: #fff;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 700;
   line-height: 1;
-  padding: 10px 14px;
+  padding: 12px 14px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.45);
 }
 
 :root {

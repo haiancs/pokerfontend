@@ -38,6 +38,17 @@ function AppContent() {
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const [tableNotices, setTableNotices] = useState([]);
   const [shareInProgress, setShareInProgress] = useState(false);
+  const [orientationFabPos, setOrientationFabPos] = useState({ x: 0, y: 0 });
+  const [orientationFabReady, setOrientationFabReady] = useState(false);
+  const orientationFabDragRef = useRef({
+    dragging: false,
+    moved: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0
+  });
 
   // 游戏状态
   const [gameState, setGameState] = useState({
@@ -432,6 +443,80 @@ function AppContent() {
     }
   };
   const rotateToLandscape = mobileDevice && portraitViewport && forceLandscape;
+  const fabWidth = 118;
+  const fabHeight = 44;
+  const fabGap = 12;
+  const clampFabPosition = (x, y) => {
+    const maxX = Math.max(fabGap, viewportSize.width - fabWidth - fabGap);
+    const maxY = Math.max(fabGap, viewportSize.height - fabHeight - fabGap);
+    return {
+      x: Math.min(Math.max(fabGap, x), maxX),
+      y: Math.min(Math.max(fabGap, y), maxY)
+    };
+  };
+
+  useEffect(() => {
+    if (!mobileDevice) {
+      setOrientationFabReady(false);
+      return;
+    }
+    if (!orientationFabReady) {
+      setOrientationFabPos({
+        x: Math.max(fabGap, viewportSize.width - fabWidth - fabGap),
+        y: Math.max(fabGap, viewportSize.height - fabHeight - fabGap)
+      });
+      setOrientationFabReady(true);
+      return;
+    }
+    setOrientationFabPos((prev) => clampFabPosition(prev.x, prev.y));
+  }, [mobileDevice, viewportSize.width, viewportSize.height, orientationFabReady]);
+
+  const handleOrientationFabPointerDown = (e) => {
+    if (!mobileDevice) return;
+    e.preventDefault();
+    const drag = orientationFabDragRef.current;
+    drag.dragging = true;
+    drag.moved = false;
+    drag.pointerId = e.pointerId;
+    drag.startX = e.clientX;
+    drag.startY = e.clientY;
+    drag.originX = orientationFabPos.x;
+    drag.originY = orientationFabPos.y;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const handleOrientationFabPointerMove = (e) => {
+    const drag = orientationFabDragRef.current;
+    if (!drag.dragging || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    if (!drag.moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+      drag.moved = true;
+    }
+    const next = clampFabPosition(drag.originX + dx, drag.originY + dy);
+    setOrientationFabPos(next);
+  };
+
+  const handleOrientationFabPointerUp = (e) => {
+    const drag = orientationFabDragRef.current;
+    if (drag.pointerId !== e.pointerId) return;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    const moved = drag.moved;
+    drag.dragging = false;
+    drag.pointerId = null;
+    drag.moved = false;
+    if (!moved) {
+      setForceLandscape((prev) => !prev);
+    }
+  };
+
+  const handleOrientationFabPointerCancel = (e) => {
+    const drag = orientationFabDragRef.current;
+    if (drag.pointerId !== e.pointerId) return;
+    drag.dragging = false;
+    drag.pointerId = null;
+    drag.moved = false;
+  };
 
   return (
     <div
@@ -592,8 +677,12 @@ function AppContent() {
       </div>
       {mobileDevice && (
         <button
-          onClick={() => setForceLandscape(prev => !prev)}
           className="mobile-orientation-toggle"
+          style={{ left: `${orientationFabPos.x}px`, top: `${orientationFabPos.y}px` }}
+          onPointerDown={handleOrientationFabPointerDown}
+          onPointerMove={handleOrientationFabPointerMove}
+          onPointerUp={handleOrientationFabPointerUp}
+          onPointerCancel={handleOrientationFabPointerCancel}
         >
           {forceLandscape ? '切换竖屏' : '切换横屏'}
         </button>
