@@ -38,6 +38,7 @@ function AppContent() {
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const [tableNotices, setTableNotices] = useState([]);
   const [shareInProgress, setShareInProgress] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [orientationFabPos, setOrientationFabPos] = useState({ x: 0, y: 0 });
   const [orientationFabReady, setOrientationFabReady] = useState(false);
   const orientationFabDragRef = useRef({
@@ -106,6 +107,17 @@ function AppContent() {
   }, []);
 
   const handleLogin = ({ nickname, roomId, maxHands, maxPlayers, uid }) => {
+    if (isConnecting) {
+      return;
+    }
+    setIsConnecting(true);
+
+    if (socketRef.current) {
+      socketRef.current.removeAllListeners();
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+
     // Generate or use existing uid
     const userId = uid || Math.random().toString(36).substr(2, 9);
     setSessionUserId(userId);
@@ -143,6 +155,7 @@ function AppContent() {
     socket.on('connect_error', (err) => {
       console.error('Socket connection error:', err);
       pushTableNotice('连接失败，请检查网络或稍后重试', 'error');
+      setIsConnecting(false);
     });
 
     socket.on('player_joined', (payload) => {
@@ -286,6 +299,7 @@ function AppContent() {
       }
 
       setIsLoggedIn(true);
+      setIsConnecting(false);
     });
     
     socket.on('error', (err) => {
@@ -304,8 +318,16 @@ function AppContent() {
         return;
       }
 
-      pushTableNotice(err?.message || '连接异常', 'error');
+      const message = err?.message || '';
+      if (message === 'Room is full' || message === 'No seats available') {
+        pushTableNotice('房间已满，请更换房间号', 'error');
+      } else if (message === '游戏已开始，无法加入') {
+        pushTableNotice('该房间已开局，暂时无法加入', 'warning');
+      } else {
+        pushTableNotice(message || '连接异常', 'error');
+      }
       setIsLoggedIn(false);
+      setIsConnecting(false);
     });
   };
 
@@ -529,6 +551,7 @@ function AppContent() {
             onLogin={handleLogin}
             forceLandscapeView={rotateToLandscape}
             presetRoomId={sharedRoomId}
+            isConnecting={isConnecting}
           />
         ) : (
           <div className="app-shell w-full h-full grid grid-cols-[280px_1fr] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-transparent text-white font-['m6x11plus'] relative">

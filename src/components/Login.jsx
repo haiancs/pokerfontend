@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User, Hash, ArrowRight } from 'lucide-react';
 
-const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '' }) => {
+const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConnecting = false }) => {
   const [nickname, setNickname] = useState('');
   const [roomId, setRoomId] = useState('');
   const [maxHands, setMaxHands] = useState('');
@@ -178,9 +178,10 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '' }) => {
 
             <button
                 type="submit"
+                disabled={isConnecting}
                 className={`flex w-full items-center justify-center gap-2 rounded-xl border-b-4 border-[#b91c1c] bg-[#ef4444] font-bold text-white shadow-lg transition-all hover:bg-[#dc2626] active:translate-y-1 active:border-b-0 group font-['m6x11plus'] ${forceLandscapeView ? 'mt-1 h-12 py-2 text-lg' : 'mt-2 h-14 py-4 text-xl sm:mt-4 sm:text-2xl'}`}
             >
-                <span>进入游戏</span>
+                <span>{isConnecting ? '连接中...' : '进入游戏'}</span>
                 <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </button>
             {isWeChatBrowser && (
