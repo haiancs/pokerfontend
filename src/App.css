@@ -62,17 +62,17 @@
   --community-main-px: 20px;
   --community-side-px: 14px;
   --community-slot-py: 12px;
-  --community-card-width: 86px;
-  --community-card-height: 116px;
+  --community-card-width: 71px;
+  --community-card-height: 95px;
 
   --action-panel-padding: 16px;
   --action-top-row-gap: 24px;
   --action-top-row-mb: 20px;
   --hand-row-height: 132px;
-  --player-card-width: 86px;
-  --player-card-height: 116px;
-  --deck-width: 86px;
-  --deck-height: 116px;
+  --player-card-width: 71px;
+  --player-card-height: 95px;
+  --deck-width: 71px;
+  --deck-height: 95px;
 
   --action-buttons-gap: 12px;
   --action-buttons-mb: 12px;
@@ -189,17 +189,17 @@
     --community-main-px: 10px;
     --community-side-px: 8px;
     --community-slot-py: 10px;
-    --community-card-width: 86px;
-    --community-card-height: 116px;
+    --community-card-width: 71px;
+    --community-card-height: 95px;
 
     --action-panel-padding: 10px;
     --action-top-row-gap: 18px;
     --action-top-row-mb: 14px;
     --hand-row-height: 90px;
-    --player-card-width: 86px;
-    --player-card-height: 116px;
-    --deck-width: 86px;
-    --deck-height: 116px;
+    --player-card-width: 71px;
+    --player-card-height: 95px;
+    --deck-width: 71px;
+    --deck-height: 95px;
 
     --action-buttons-gap: 8px;
     --action-buttons-mb: 6px;
@@ -228,17 +228,17 @@
     --community-main-px: 8px;
     --community-side-px: 6px;
     --community-slot-py: 8px;
-    --community-card-width: 86px;
-    --community-card-height: 116px;
+    --community-card-width: 71px;
+    --community-card-height: 95px;
 
     --action-panel-padding: 8px;
     --action-top-row-gap: 14px;
     --action-top-row-mb: 8px;
     --hand-row-height: 78px;
-    --player-card-width: 86px;
-    --player-card-height: 116px;
-    --deck-width: 86px;
-    --deck-height: 116px;
+    --player-card-width: 71px;
+    --player-card-height: 95px;
+    --deck-width: 71px;
+    --deck-height: 95px;
 
     --action-buttons-gap: 6px;
     --action-buttons-mb: 4px;
@@ -267,17 +267,17 @@
     --community-main-px: 6px;
     --community-side-px: 4px;
     --community-slot-py: 6px;
-    --community-card-width: 86px;
-    --community-card-height: 116px;
+    --community-card-width: 71px;
+    --community-card-height: 95px;
 
     --action-panel-padding: 6px;
     --action-top-row-gap: 10px;
     --action-top-row-mb: 6px;
     --hand-row-height: 70px;
-    --player-card-width: 86px;
-    --player-card-height: 116px;
-    --deck-width: 86px;
-    --deck-height: 116px;
+    --player-card-width: 71px;
+    --player-card-height: 95px;
+    --deck-width: 71px;
+    --deck-height: 95px;
 
     --action-buttons-gap: 4px;
     --action-buttons-mb: 3px;
@@ -306,17 +306,17 @@
     --community-main-px: 4px;
     --community-side-px: 3px;
     --community-slot-py: 4px;
-    --community-card-width: 86px;
-    --community-card-height: 116px;
+    --community-card-width: 71px;
+    --community-card-height: 95px;
 
     --action-panel-padding: 4px;
     --action-top-row-gap: 8px;
     --action-top-row-mb: 4px;
     --hand-row-height: 62px;
-    --player-card-width: 86px;
-    --player-card-height: 116px;
-    --deck-width: 86px;
-    --deck-height: 116px;
+    --player-card-width: 71px;
+    --player-card-height: 95px;
+    --deck-width: 71px;
+    --deck-height: 95px;
 
     --action-buttons-gap: 3px;
     --action-buttons-mb: 2px;

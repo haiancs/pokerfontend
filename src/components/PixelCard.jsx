@@ -45,9 +45,11 @@ const PixelCard = ({ rank, suit, hidden = false, className, style, onClick }) =>
     
     // 14 columns (0..13). Max index is 13.
     // Percentage = (index / (cols - 1)) * 100%
+    // 0 -> 0%, 13 -> 100%
     const backgroundPositionX = `${(numericRank / 13) * 100}%`;
     
     // 4 rows (0..3). Max index is 3.
+    // 0 -> 0%, 3 -> 100%
     const backgroundPositionY = `${(suitOffset / 3) * 100}%`;
     
     cardStyle.backgroundPosition = `${backgroundPositionX} ${backgroundPositionY}`;

@@ -7,8 +7,9 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
 
   const alivePlayers = players.filter((player) => {
     if (player.status === 'fold') return false;
-    if (!player.cards || player.cards.length === 0) return false;
-    return player.cards.every(card => card.revealed);
+    // 允许 cards 为空或 undefined，只要不是 fold 状态且参与了 showdown
+    if (!player.cards) return showdown; // 如果是 showdown 且没有 cards 数据，可能后端没传，暂时认为是存活
+    return player.cards.length > 0;
   });
 
   return (
@@ -28,7 +29,7 @@ const HandResultModal = ({ winners, onContinue, myPlayer, communityCards = [], p
             <div className="bg-slate-900/60 border border-white/10 rounded-xl p-4 space-y-4">
               <div>
                 <div className="text-xs text-slate-400 mb-2">公共牌</div>
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap justify-center">
                   {communityCards.map((card, idx) => (
                     <div key={`board-${idx}`} className="w-10 h-14">
                       <Card rank={card.rank} suit={card.suit} />

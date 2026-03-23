@@ -9,6 +9,7 @@ import HandResultModal from './components/HandResultModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import BackgroundShader from './components/BackgroundShader';
 import CardAnimator from './components/CardAnimator';
+import ToastContainer from './components/ToastContainer';
 import { LogOut } from 'lucide-react';
 import { playWinSound } from './utils/SoundManager';
 
@@ -24,11 +25,14 @@ const isMobileDevice = () => {
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [room, setRoom] = useState(null);
+  const [sessionUserId, setSessionUserId] = useState(null);
   const socketRef = useRef(null);
+  const noticeTimersRef = useRef([]);
   const [mobileDevice, setMobileDevice] = useState(isMobileDevice);
   const [portraitViewport, setPortraitViewport] = useState(() => window.innerHeight > window.innerWidth);
   const [forceLandscape, setForceLandscape] = useState(isMobileDevice);
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  const [tableNotices, setTableNotices] = useState([]);
 
   // 游戏状态
   const [gameState, setGameState] = useState({
@@ -44,6 +48,7 @@ function AppContent() {
     minRaise: 20,
     minTotalRaiseTo: 40,
     bigBlind: 20,
+    hostUid: null,
     winners: [],
     showdown: false
   });
@@ -51,6 +56,16 @@ function AppContent() {
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverStats, setGameOverStats] = useState([]);
   const [hasConfirmedResult, setHasConfirmedResult] = useState(false);
+
+  const pushTableNotice = (message, tone = 'warning') => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setTableNotices(prev => [...prev, { id, message, tone }].slice(-4));
+    const timerId = window.setTimeout(() => {
+      setTableNotices(prev => prev.filter(item => item.id !== id));
+      noticeTimersRef.current = noticeTimersRef.current.filter(t => t !== timerId);
+    }, 2600);
+    noticeTimersRef.current.push(timerId);
+  };
 
   useEffect(() => {
     const handleViewportChange = () => {
@@ -77,6 +92,7 @@ function AppContent() {
   const handleLogin = ({ nickname, roomId, maxHands, maxPlayers, uid }) => {
     // Generate or use existing uid
     const userId = uid || Math.random().toString(36).substr(2, 9);
+    setSessionUserId(userId);
     
     // Save session
     localStorage.setItem('poker_session', JSON.stringify({
@@ -110,6 +126,29 @@ function AppContent() {
 
     socket.on('connect_error', (err) => {
       console.error('Socket connection error:', err);
+      pushTableNotice('连接失败，请检查网络或稍后重试', 'error');
+    });
+
+    socket.on('player_joined', (payload) => {
+      const player = payload?.player;
+      if (!player) return;
+      const isMe = player.uid === userId || player.sid === socket.id;
+      if (isMe) {
+        pushTableNotice(`你已入座：${player.name || '玩家'}`, 'success');
+        return;
+      }
+      pushTableNotice(`${player.name || '有玩家'} 入座`, 'success');
+    });
+
+    socket.on('player_left', (payload) => {
+      const player = payload?.player;
+      if (!player) return;
+      const isMe = player.uid === userId || player.sid === socket.id;
+      if (isMe) {
+        pushTableNotice('你已离桌', 'warning');
+        return;
+      }
+      pushTableNotice(`${player.name || '有玩家'} 离桌`, 'warning');
     });
 
     socket.on('game_update', (data) => {
@@ -211,6 +250,7 @@ function AppContent() {
         minRaise: data.minRaise || 20,
         minTotalRaiseTo: data.minTotalRaiseTo || ((data.currentBet || 0) + (data.minRaise || 20)),
         bigBlind: data.bigBlind || 20,
+        hostUid: data.hostUid || null,
         winners: data.winners || [],
         showdown: !!data.showdown
       });
@@ -234,7 +274,21 @@ function AppContent() {
     
     socket.on('error', (err) => {
       console.error('Socket error:', err);
-      alert(err.message || 'Connection error');
+      const code = err?.code || '';
+      const isActionError = err?.type === 'ACTION_ERROR' || code.startsWith('ACTION_');
+
+      if (isActionError) {
+        // 结构化错误，便于统一埋点统计
+        console.warn('[ACTION_ERROR]', {
+          code: err?.code,
+          message: err?.message,
+          detail: err?.detail || {}
+        });
+        pushTableNotice(err?.message || '操作失败', 'warning');
+        return;
+      }
+
+      pushTableNotice(err?.message || '连接异常', 'error');
       setIsLoggedIn(false);
     });
   };
@@ -261,6 +315,8 @@ function AppContent() {
       if (loginTimeout) {
         clearTimeout(loginTimeout);
       }
+      noticeTimersRef.current.forEach(clearTimeout);
+      noticeTimersRef.current = [];
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
@@ -278,12 +334,13 @@ function AppContent() {
     }
   };
 
-  const handleReady = () => {
+  const handleReady = (ready = true) => {
     setHasConfirmedResult(true);
 
     if (socketRef.current) {
         socketRef.current.emit('player_ready', {
-            tableId: room.roomId
+            tableId: room.roomId,
+            ready
         });
     }
   };
@@ -297,9 +354,23 @@ function AppContent() {
       }
   };
 
+  const handleStartFirstHand = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('start_first_hand', {
+        tableId: room.roomId
+      });
+    }
+  };
+
   const myPlayer = gameState.players.find(p => p.isMe);
   const isMyTurn = myPlayer?.isActive || false;
   const showHandResult = gameState.winners && gameState.winners.length > 0 && !hasConfirmedResult;
+  const isInitialWaiting = gameState.state === 'WAITING' && (gameState.handsPlayed || 0) === 0;
+  const isHost = Boolean(sessionUserId && gameState.hostUid && sessionUserId === gameState.hostUid);
+  const readyCandidates = gameState.players.filter((p) => p.stack > 0);
+  const readyCount = readyCandidates.filter((p) => p.isReady).length;
+  const allPlayersReadyInWaiting = readyCandidates.length >= 2 && readyCount === readyCandidates.length;
+  const myReady = myPlayer?.isReady;
   const currentRound = gameState.maxHands
     ? `${Math.min((gameState.handsPlayed || 0) + 1, gameState.maxHands)}/${gameState.maxHands}`
     : (gameState.handsPlayed || 0) + 1;
@@ -356,14 +427,42 @@ function AppContent() {
               {gameState.state === 'WAITING' && (
                 <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
                   <div className="flex flex-col items-center gap-4 p-8 bg-black/80 rounded-xl border border-white/20 shadow-2xl">
-                    <h2 className="text-2xl text-[#f59e0b] animate-pulse">等待玩家加入...</h2>
+                    <h2 className="text-2xl text-[#f59e0b] animate-pulse">
+                      {isInitialWaiting ? '首局准备中' : '等待下一手开始'}
+                    </h2>
                     {gameState.players.length >= 2 ? (
-                      <button
-                        onClick={handleReady}
-                        className="px-8 py-3 rounded-lg font-bold text-xl bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-lg transition-transform active:scale-95 border-b-4 border-[#15803d]"
-                      >
-                        我准备好了
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleReady(!myReady)}
+                          className="px-8 py-3 rounded-lg font-bold text-xl bg-[#22c55e] hover:bg-[#16a34a] text-white shadow-lg transition-transform active:scale-95 border-b-4 border-[#15803d]"
+                        >
+                          {myReady ? '取消准备' : '我准备好了'}
+                        </button>
+                        <p className="text-slate-300 text-sm">
+                          已准备 {readyCount}/{readyCandidates.length}
+                        </p>
+                        {isInitialWaiting ? (
+                          <>
+                            {isHost ? (
+                              <button
+                                onClick={handleStartFirstHand}
+                                disabled={!allPlayersReadyInWaiting}
+                                className="px-8 py-3 rounded-lg font-bold text-xl bg-[#f59e0b] hover:bg-[#d97706] disabled:bg-slate-600 disabled:cursor-not-allowed text-black shadow-lg transition-transform active:scale-95 border-b-4 border-[#b45309]"
+                              >
+                                房主开始首局
+                              </button>
+                            ) : (
+                              <p className="text-slate-300">
+                                {allPlayersReadyInWaiting ? '已全部准备，等待房主开始首局' : '请先准备，等待房主开始首局'}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-slate-300">
+                            {allPlayersReadyInWaiting ? '全部已准备，下一手即将开始' : '每位玩家准备后将自动开始下一手'}
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <p className="text-slate-400">至少需要2名玩家开始游戏</p>
                     )}
@@ -390,11 +489,12 @@ function AppContent() {
             >
               <LogOut size={18} />
             </button>
+            <ToastContainer toasts={tableNotices} />
             {showHandResult && (
               <HandResultModal
                 winners={gameState.winners}
                 communityCards={gameState.communityCards}
-                onContinue={handleReady}
+                onContinue={() => handleReady(true)}
                 players={gameState.players}
                 myPlayer={myPlayer}
                 showdown={gameState.showdown}
