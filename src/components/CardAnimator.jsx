@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getCardBackStyle } from '../utils/cardUtils';
+import { playChipDropByDenomination } from '../utils/SoundManager';
 
-const CardAnimator = ({ communityCards = [], myHand = [], players = [] }) => {
+const CardAnimator = ({ communityCards = [], myHand = [], players = [], pot = 0 }) => {
   const [flyingCards, setFlyingCards] = useState([]);
+  const [flyingChips, setFlyingChips] = useState([]);
   const prevCommunityLen = useRef(communityCards.length);
   const prevHandLen = useRef(myHand.length);
+  const prevPotRef = useRef(pot);
   const prevFoldedPlayers = useRef({}); // Track fold status per player ID
   const animationIdRef = useRef(0);
   const isMounted = useRef(true);
@@ -141,6 +144,68 @@ const CardAnimator = ({ communityCards = [], myHand = [], players = [] }) => {
     attemptAnimation();
   };
 
+  const createChipBurstToPot = (deltaAmount = 1) => {
+    const potEl = document.getElementById('pot-chip-target');
+    if (!potEl || deltaAmount <= 0) return;
+    const targetRect = potEl.getBoundingClientRect();
+    if (targetRect.width === 0 || targetRect.height === 0) return;
+
+    const sourceAnchor = document.querySelector('.action-panel')?.getBoundingClientRect();
+    const sourceX = sourceAnchor ? sourceAnchor.left + sourceAnchor.width / 2 : window.innerWidth / 2;
+    const sourceY = sourceAnchor ? sourceAnchor.top + 8 : window.innerHeight - 56;
+    const targetX = targetRect.left + targetRect.width / 2;
+    const targetY = targetRect.top + targetRect.height / 2;
+
+    const buildChipDenominations = (delta, maxCount) => {
+      const denoms = [100, 25, 5, 1];
+      let remaining = Math.max(1, Math.round(delta));
+      const stack = [];
+      while (remaining > 0 && stack.length < maxCount) {
+        const denom = denoms.find((d) => d <= remaining) || 1;
+        stack.push(denom);
+        remaining -= denom;
+      }
+      if (stack.length >= maxCount && remaining > 0) {
+        stack[stack.length - 1] = 100;
+      }
+      while (stack.length < Math.min(3, maxCount)) {
+        stack.push(stack[stack.length - 1] || 1);
+      }
+      return stack;
+    };
+
+    const chipCount = Math.max(3, Math.min(9, Math.ceil(deltaAmount / 70)));
+    const chipDenoms = buildChipDenominations(deltaAmount, chipCount);
+    const chips = chipDenoms.map((denom, i) => {
+      const id = `chip-${animationIdRef.current++}`;
+      return {
+        id,
+        denom,
+        delay: i * 55,
+        startX: sourceX + (Math.random() * 36 - 18),
+        startY: sourceY + (Math.random() * 10 - 5),
+        dx: targetX - sourceX + (Math.random() * 18 - 9),
+        dy: targetY - sourceY + (Math.random() * 14 - 7),
+        rotate: 220 + Math.random() * 260,
+        jitterX: (Math.random() * 4 - 2).toFixed(2),
+        jitterY: (Math.random() * 3 - 1.5).toFixed(2),
+      };
+    });
+
+    setFlyingChips((prev) => [...prev, ...chips]);
+    chips.slice(0, 3).forEach((chip) => {
+      window.setTimeout(() => {
+        if (!isMounted.current) return;
+        playChipDropByDenomination(chip.denom);
+      }, chip.delay + 80);
+    });
+    window.setTimeout(() => {
+      if (!isMounted.current) return;
+      const chipIds = new Set(chips.map((chip) => chip.id));
+      setFlyingChips((prev) => prev.filter((chip) => !chipIds.has(chip.id)));
+    }, 950 + chipDenoms.length * 55);
+  };
+
   // Watch Community Cards
   useEffect(() => {
       if (communityCards.length > prevCommunityLen.current) {
@@ -207,6 +272,16 @@ const CardAnimator = ({ communityCards = [], myHand = [], players = [] }) => {
       });
   }, [players]);
 
+  // Watch pot growth and play chip fly animation
+  useEffect(() => {
+    const prevPot = prevPotRef.current || 0;
+    if (pot > prevPot) {
+      const delta = pot - prevPot;
+      createChipBurstToPot(delta);
+    }
+    prevPotRef.current = pot;
+  }, [pot]);
+
   return (
       <>
           {flyingCards.map(card => (
@@ -217,6 +292,22 @@ const CardAnimator = ({ communityCards = [], myHand = [], players = [] }) => {
               >
                   <div className="w-full h-full bg-no-repeat rounded border border-black/20" style={backStyle}></div>
               </div>
+          ))}
+          {flyingChips.map((chip) => (
+            <div
+              key={chip.id}
+              className={`pointer-events-none fixed z-[9998] w-3 h-3 rounded-full border chip-flight chip-denom-${chip.denom}`}
+              style={{
+                left: chip.startX,
+                top: chip.startY,
+                '--chip-dx': `${chip.dx}px`,
+                '--chip-dy': `${chip.dy}px`,
+                '--chip-delay': `${chip.delay}ms`,
+                '--chip-rotate': `${chip.rotate}deg`,
+                '--chip-jitter-x': `${chip.jitterX}px`,
+                '--chip-jitter-y': `${chip.jitterY}px`,
+              }}
+            />
           ))}
       </>
   );

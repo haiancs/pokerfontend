@@ -126,3 +126,154 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.3);
 }
+
+@keyframes chip-flight {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.8) rotate(0deg);
+    opacity: 0.95;
+  }
+  68% {
+    opacity: 1;
+  }
+  84% {
+    transform: translate3d(var(--chip-dx, 0px), var(--chip-dy, -120px), 0) scale(0.58) rotate(var(--chip-rotate, 240deg));
+    opacity: 0.98;
+  }
+  92% {
+    transform: translate3d(calc(var(--chip-dx, 0px) + var(--chip-jitter-x, 0px)), calc(var(--chip-dy, -120px) + var(--chip-jitter-y, 0px)), 0) scale(0.62) rotate(calc(var(--chip-rotate, 240deg) + 16deg));
+    opacity: 0.86;
+  }
+  100% {
+    transform: translate3d(var(--chip-dx, 0px), var(--chip-dy, -120px), 0) scale(0.56) rotate(calc(var(--chip-rotate, 240deg) + 10deg));
+    opacity: 0;
+  }
+}
+
+.chip-flight {
+  animation: chip-flight 820ms cubic-bezier(0.2, 0.9, 0.3, 1) var(--chip-delay, 0ms) forwards;
+  border-style: dashed;
+  border-width: var(--chip-border-w, 1px);
+  box-shadow:
+    0 0 6px var(--chip-glow, rgba(251, 191, 36, 0.7)),
+    inset 0 0 0 var(--chip-inner-ring-w, 1px) var(--chip-inner-ring-color, rgba(255, 255, 255, 0.4));
+}
+
+.chip-denom-1 {
+  --chip-border-w: 1px;
+  --chip-inner-ring-w: 1px;
+  --chip-inner-ring-color: rgba(148, 163, 184, 0.45);
+  --chip-glow: rgba(226, 232, 240, 0.55);
+  border-color: rgba(203, 213, 225, 0.92);
+  background:
+    radial-gradient(circle at 32% 30%, #ffffff 0%, #ffffff 20%, transparent 22%),
+    radial-gradient(circle at center, transparent 42%, rgba(148, 163, 184, 0.55) 44%, rgba(148, 163, 184, 0.55) 48%, transparent 50%),
+    radial-gradient(circle at 35% 35%, #ffffff 0%, #f8fafc 58%, #cbd5e1 100%);
+}
+
+.chip-denom-5 {
+  --chip-border-w: 1.4px;
+  --chip-inner-ring-w: 1.2px;
+  --chip-inner-ring-color: rgba(254, 202, 202, 0.45);
+  --chip-glow: rgba(248, 113, 113, 0.62);
+  border-color: rgba(254, 202, 202, 0.84);
+  background:
+    radial-gradient(circle at center, transparent 41%, rgba(254, 202, 202, 0.58) 43%, rgba(254, 202, 202, 0.58) 47%, transparent 49%),
+    radial-gradient(circle at 35% 35%, #fecaca 0%, #ef4444 58%, #991b1b 100%);
+}
+
+.chip-denom-25 {
+  --chip-border-w: 1.7px;
+  --chip-inner-ring-w: 1.4px;
+  --chip-inner-ring-color: rgba(191, 219, 254, 0.5);
+  --chip-glow: rgba(59, 130, 246, 0.66);
+  border-color: rgba(191, 219, 254, 0.85);
+  background:
+    radial-gradient(circle at center, transparent 39%, rgba(191, 219, 254, 0.62) 41%, rgba(191, 219, 254, 0.62) 46%, transparent 48%),
+    radial-gradient(circle at 35% 35%, #bfdbfe 0%, #3b82f6 58%, #1e3a8a 100%);
+}
+
+.chip-denom-100 {
+  --chip-border-w: 2px;
+  --chip-inner-ring-w: 1.6px;
+  --chip-inner-ring-color: rgba(148, 163, 184, 0.36);
+  --chip-glow: rgba(30, 41, 59, 0.78);
+  border-color: rgba(148, 163, 184, 0.78);
+  background:
+    radial-gradient(circle at center, transparent 37%, rgba(100, 116, 139, 0.55) 39%, rgba(100, 116, 139, 0.55) 45%, transparent 47%),
+    radial-gradient(circle at 35% 35%, #64748b 0%, #0f172a 58%, #020617 100%);
+}
+
+@keyframes pixel-flame-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.95;
+  }
+  60% {
+    opacity: 0.82;
+  }
+  100% {
+    transform: translateY(calc(-1 * var(--flame-rise, 8px))) scale(0.9);
+    opacity: 0;
+  }
+}
+
+.pixel-allin-flames {
+  pointer-events: none;
+  position: absolute;
+  right: 4px;
+  top: -4px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  z-index: 5;
+  opacity: 0.85;
+  --flame-rise: 8px;
+  --flame-duration: 760ms;
+}
+
+.pixel-allin-flame {
+  width: 5px;
+  height: 8px;
+  border-radius: 1px;
+  background:
+    linear-gradient(to top, #f97316 0%, #f97316 26%, #facc15 26%, #facc15 62%, #fef08a 62%, #fef08a 100%);
+  box-shadow:
+    0 0 0 1px rgba(194, 65, 12, 0.35),
+    0 0 8px rgba(249, 115, 22, 0.55);
+  image-rendering: pixelated;
+  transform-origin: bottom center;
+  animation: pixel-flame-rise var(--flame-duration, 760ms) steps(3, end) infinite;
+}
+
+.pixel-allin-flame.f2 {
+  height: 10px;
+  animation-delay: 120ms;
+}
+
+.pixel-allin-flame.f3 {
+  height: 7px;
+  animation-delay: 240ms;
+}
+
+.pixel-allin-flame.f4 {
+  height: 9px;
+  animation-delay: 90ms;
+}
+
+.pixel-allin-flames.heat-low {
+  --flame-rise: 6px;
+  --flame-duration: 860ms;
+  opacity: 0.62;
+}
+
+.pixel-allin-flames.heat-medium {
+  --flame-rise: 8px;
+  --flame-duration: 760ms;
+  opacity: 0.82;
+}
+
+.pixel-allin-flames.heat-high {
+  --flame-rise: 11px;
+  --flame-duration: 620ms;
+  opacity: 0.96;
+}

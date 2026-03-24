@@ -10,7 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import BackgroundShader from './components/BackgroundShader';
 import CardAnimator from './components/CardAnimator';
 import ToastContainer from './components/ToastContainer';
-import { LogOut, Share2, RefreshCw } from 'lucide-react';
+import { LogOut, Share2, Maximize2, Minimize2 } from 'lucide-react';
 import { playWinSound } from './utils/SoundManager';
 
 // Use environment variable or default to localhost:3000
@@ -39,6 +39,9 @@ function AppContent() {
   const [tableNotices, setTableNotices] = useState([]);
   const [shareInProgress, setShareInProgress] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isImmersiveBusy, setIsImmersiveBusy] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(() => Boolean(document.fullscreenElement));
+  const [inputFocusActive, setInputFocusActive] = useState(false);
 
   // 游戏状态
   const [gameState, setGameState] = useState({
@@ -92,6 +95,17 @@ function AppContent() {
       window.removeEventListener('orientationchange', handleViewportChange);
       window.visualViewport?.removeEventListener('resize', handleViewportChange);
       window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    syncFullscreenState();
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreenState);
     };
   }, []);
 
@@ -365,6 +379,41 @@ function AppContent() {
     }
   };
 
+  const handleImmersiveToggle = async () => {
+    if (isImmersiveBusy) return;
+    setIsImmersiveBusy(true);
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        if (screen.orientation?.unlock) {
+          screen.orientation.unlock();
+        }
+        pushTableNotice('已退出沉浸模式', 'warning');
+        return;
+      }
+
+      const rootEl = document.documentElement;
+      if (rootEl.requestFullscreen) {
+        await rootEl.requestFullscreen({ navigationUI: 'hide' });
+      }
+
+      let lockSucceeded = false;
+      if (screen.orientation?.lock) {
+        try {
+          await screen.orientation.lock('landscape');
+          lockSucceeded = true;
+        } catch {
+          lockSucceeded = false;
+        }
+      }
+      pushTableNotice(lockSucceeded ? '已进入沉浸横屏模式' : '已进入沉浸模式（方向锁定可能不支持）', 'success');
+    } catch {
+      pushTableNotice('沉浸模式开启失败，请检查浏览器权限', 'warning');
+    } finally {
+      setIsImmersiveBusy(false);
+    }
+  };
+
   useEffect(() => {
     let loginTimeout;
     const session = localStorage.getItem('poker_session');
@@ -453,7 +502,7 @@ function AppContent() {
       window.location.reload();
     }
   };
-  const rotateToLandscape = mobileDevice && portraitViewport && forceLandscape;
+  const rotateToLandscape = isLoggedIn && mobileDevice && portraitViewport && forceLandscape && !inputFocusActive;
   const compactLandscapeViewport = viewportSize.height <= 380 && viewportSize.width >= 700;
 
   return (
@@ -465,10 +514,11 @@ function AppContent() {
         {!isLoggedIn ? (
           <Login
             onLogin={handleLogin}
-            forceLandscapeView={rotateToLandscape}
+            forceLandscapeView={false}
             presetRoomId={sharedRoomId}
             isConnecting={isConnecting}
-            compactViewport={compactLandscapeViewport}
+            compactViewport={false}
+            onInputFocusChange={setInputFocusActive}
           />
         ) : (
           <div className="app-shell w-full h-full grid grid-cols-[280px_1fr] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-transparent text-white font-['m6x11plus'] relative">
@@ -477,10 +527,12 @@ function AppContent() {
               communityCards={gameState.communityCards}
               myHand={myPlayer?.cards || []}
               players={gameState.players}
+              pot={gameState.pot || 0}
             />
             <div className="app-sidebar row-span-2 border-r border-white/10 bg-black/30 backdrop-blur-sm z-10 overflow-hidden">
               <InfoPanel
                 players={gameState.players}
+                pot={gameState.pot || 0}
               />
             </div>
             <div className={`app-table-region relative flex flex-col items-center justify-center px-4 ${compactLandscapeViewport ? 'pt-12' : 'pt-20'} pb-3 min-h-0 overflow-hidden`}>
@@ -496,7 +548,7 @@ function AppContent() {
                   </div>
                   <div className="px-2.5 py-1 rounded bg-black/30 border border-white/10">
                     <span className="text-slate-400 text-[11px]">底池</span>
-                    <span className="ml-2 text-[#f59e0b] text-sm font-bold">${gameState.pot || 0}</span>
+                    <span id="pot-chip-target" className="ml-2 text-[#f59e0b] text-sm font-bold">${gameState.pot || 0}</span>
                   </div>
                 </div>
               </div>
@@ -596,40 +648,41 @@ function AppContent() {
             )}
           </div>
         )}
+        {mobileDevice && (
+          <div className={`absolute z-[90] flex flex-col items-end ${compactLandscapeViewport ? 'right-2 bottom-2 gap-1.5' : 'right-4 bottom-4 gap-2'}`}>
+            <button
+              aria-label={isFullscreen ? '退出沉浸模式' : '进入沉浸模式'}
+              title={isFullscreen ? '退出沉浸模式' : '进入沉浸模式'}
+              onClick={handleImmersiveToggle}
+              disabled={isImmersiveBusy}
+              className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 disabled:bg-slate-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
+            >
+              {isFullscreen ? <Minimize2 size={compactLandscapeViewport ? 14 : 16} /> : <Maximize2 size={compactLandscapeViewport ? 14 : 16} />}
+            </button>
+            {isLoggedIn && (
+              <>
+                <button
+                  onClick={handleShareRoom}
+                  aria-label="分享房间"
+                  title={shareInProgress ? '正在分享...' : '分享房间'}
+                  disabled={shareInProgress}
+                  className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-emerald-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
+                >
+                  <Share2 size={compactLandscapeViewport ? 14 : 16} />
+                </button>
+                <button
+                  onClick={handleExitGame}
+                  aria-label="退出游戏"
+                  title="退出游戏"
+                  className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
+                >
+                  <LogOut size={compactLandscapeViewport ? 15 : 18} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
-      {mobileDevice && (
-        <div className={`fixed z-[55] flex flex-col items-end ${compactLandscapeViewport ? 'right-2 bottom-2 gap-1.5' : 'right-4 bottom-4 gap-2'}`}>
-          <button
-            aria-label={forceLandscape ? '切换竖屏' : '切换横屏'}
-            title={forceLandscape ? '切换竖屏' : '切换横屏'}
-            onClick={() => setForceLandscape((prev) => !prev)}
-            className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
-          >
-            <RefreshCw size={compactLandscapeViewport ? 14 : 16} />
-          </button>
-          {isLoggedIn && (
-            <>
-              <button
-                onClick={handleShareRoom}
-                aria-label="分享房间"
-                title={shareInProgress ? '正在分享...' : '分享房间'}
-                disabled={shareInProgress}
-                className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-emerald-900/70 disabled:cursor-not-allowed text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
-              >
-                <Share2 size={compactLandscapeViewport ? 14 : 16} />
-              </button>
-              <button
-                onClick={handleExitGame}
-                aria-label="退出游戏"
-                title="退出游戏"
-                className={`${compactLandscapeViewport ? 'h-9 w-9' : 'h-10 w-10'} flex items-center justify-center bg-slate-700/90 hover:bg-slate-600 text-white rounded-lg border-2 border-white/20 shadow-lg active:translate-y-1 transition-all`}
-              >
-                <LogOut size={compactLandscapeViewport ? 15 : 18} />
-              </button>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

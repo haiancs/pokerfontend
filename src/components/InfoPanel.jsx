@@ -3,7 +3,8 @@ import { clsx } from 'clsx';
 import Card from './Card';
 
 const InfoPanel = ({ 
-    players = []
+    players = [],
+    pot = 0
 }) => {
     const scrollRef = useRef(null);
     const activeRowRef = useRef(null);
@@ -69,18 +70,27 @@ const InfoPanel = ({
                     const isMe = player.isMe;
                     const isActive = player.isActive;
                     const isFolded = player.status === 'fold';
+                    const isAllIn = player.status === 'all-in';
+                    const allInHeatTier = (() => {
+                        if (!isAllIn) return 'low';
+                        const pressure = Math.max(player.bet || 0, Math.round((pot || 0) * 0.2));
+                        if (pressure >= 320) return 'high';
+                        if (pressure >= 140) return 'medium';
+                        return 'low';
+                    })();
                     
                     return (
                         <div 
                             key={player.id || player.socketId}
                             ref={isActive ? activeRowRef : null}
                             className={clsx(
-                                "flex justify-between items-center p-1.5 rounded border transition-all duration-200 origin-center",
+                                "relative flex justify-between items-center p-1.5 rounded border transition-all duration-200 origin-center overflow-visible",
                                 isMe 
                                     ? "bg-[#f59e0b]/20 border-[#f59e0b]" 
                                     : (isActive ? "bg-[#ef4444]/20 border-[#ef4444]" : "bg-white/10 border-white/10"),
                                 isActive && "shadow-[0_0_0_1px_rgba(239,68,68,0.35)]",
-                                isFolded && "opacity-45 grayscale saturate-0 scale-[0.9] blur-[0.5px] bg-slate-700/30 border-slate-500/40"
+                                isFolded && "opacity-45 grayscale saturate-0 scale-[0.9] blur-[0.5px] bg-slate-700/30 border-slate-500/40",
+                                isAllIn && "ring-1 ring-orange-400/55 shadow-[0_0_12px_rgba(249,115,22,0.35)]"
                             )}
                         >
                             <div className="flex flex-col flex-1 min-w-0">
@@ -100,6 +110,11 @@ const InfoPanel = ({
                                             <span className="font-['m6x11plus'] text-[#f59e0b] text-base">
                                                 ${player.stack}
                                             </span>
+                                            {isAllIn && (
+                                                <span className="bg-orange-500/25 border border-orange-300/40 px-1.5 py-0.5 rounded text-[10px] text-orange-100 uppercase tracking-wide">
+                                                    all-in
+                                                </span>
+                                            )}
                                             {player.bet > 0 && (
                                                 <span className="bg-black/40 px-1.5 py-0.5 rounded text-xs text-slate-300">
                                                     下注: {player.bet}
@@ -123,6 +138,14 @@ const InfoPanel = ({
                                     </div>
                                 </div>
                             </div>
+                            {isAllIn && (
+                                <div className={`pixel-allin-flames heat-${allInHeatTier}`} aria-hidden="true">
+                                    <span className="pixel-allin-flame f1"></span>
+                                    <span className="pixel-allin-flame f2"></span>
+                                    <span className="pixel-allin-flame f3"></span>
+                                    {allInHeatTier === 'high' && <span className="pixel-allin-flame f4"></span>}
+                                </div>
+                            )}
                         </div>
                     );
                     })}

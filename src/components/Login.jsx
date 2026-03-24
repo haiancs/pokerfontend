@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { User, Hash, ArrowRight } from 'lucide-react';
+import { warmupChipSounds } from '../utils/SoundManager';
 
-const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConnecting = false, compactViewport = false }) => {
+const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConnecting = false, compactViewport = false, onInputFocusChange = null }) => {
   const [nickname, setNickname] = useState('');
   const [roomId, setRoomId] = useState('');
   const [maxHands, setMaxHands] = useState('');
@@ -33,9 +34,28 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
     setIsWeChatBrowser(/MicroMessenger/i.test(ua));
   }, []);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    return () => {
+      onInputFocusChange?.(false);
+    };
+  }, [onInputFocusChange]);
+
+  const handleFieldFocus = () => {
+    onInputFocusChange?.(true);
+  };
+
+  const handleFieldBlur = () => {
+    window.setTimeout(() => {
+      const activeTag = document.activeElement?.tagName;
+      const stillInputFocused = activeTag === 'INPUT' || activeTag === 'TEXTAREA';
+      onInputFocusChange?.(stillInputFocused);
+    }, 0);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (nickname && roomId) {
+      await warmupChipSounds();
       const parsedMaxPlayers = maxPlayers ? parseInt(maxPlayers, 10) : 9;
       const normalizedRoomId = roomId.trim();
       const roomConfig = lockRoomConfig
@@ -116,6 +136,8 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
+                    onFocus={handleFieldFocus}
+                    onBlur={handleFieldBlur}
                     placeholder="输入你的昵称"
                     className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 py-3 pl-10 pr-4 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
                     required
@@ -132,6 +154,8 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
                     type="text"
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
+                    onFocus={handleFieldFocus}
+                    onBlur={handleFieldBlur}
                     placeholder={roomIdFromLink ? '来自分享链接' : '输入房间号'}
                     className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 py-3 pl-10 pr-4 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
                     required
@@ -157,6 +181,8 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
                         min="1"
                         value={maxHands}
                         onChange={(e) => setMaxHands(e.target.value)}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
                         placeholder={lockRoomConfig ? '分享链接已锁定' : '默认'}
                         className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 px-4 py-3 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
                         disabled={lockRoomConfig}
@@ -170,6 +196,8 @@ const Login = ({ onLogin, forceLandscapeView = false, presetRoomId = '', isConne
                         max="9"
                         value={maxPlayers}
                         onChange={(e) => setMaxPlayers(e.target.value)}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
                         placeholder={lockRoomConfig ? '分享链接已锁定' : '9'}
                         className="h-12 w-full rounded-lg border-2 border-slate-600 bg-black/40 px-4 py-3 text-base text-white placeholder-slate-500 transition-all focus:outline-none focus:border-[#f59e0b] sm:text-lg font-['m6x11plus']"
                         disabled={lockRoomConfig}
